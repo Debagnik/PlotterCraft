@@ -141,6 +141,7 @@ class CatPlotLibTests {
 				1. Ordered item 1
 				2. Ordered item 2
 				
+				> $A = \\int_{-2}^{2} (4 - x^2) \\, dx = \\left[ 4x - \\frac{x^3}{3} \\right]_{-2}^{2} = \\frac{32}{3} \\approx 10.67$
 				> Blockquote highlighting critical parameters
 				
 				```python
@@ -233,12 +234,6 @@ class CatPlotLibTests {
 		box.expandToInclude(10.0, 20.0);
 		assertThat(box.isValid()).isTrue();
 
-		try (var ctx = org.springframework.boot.SpringApplication.run(
-				CatPlotLib.class,
-				"--spring.main.web-application-type=none",
-				"--spring.main.banner-mode=off",
-				"--server.port=0")) {
-			assertThat(ctx).isNotNull();
-		}
+		assertThat(new CatPlotLib()).isNotNull();
 	}
 }

@@ -4,13 +4,13 @@ import in.debagnik.catplotlib.model.BoundingBox;
 import in.debagnik.catplotlib.model.PlotterJobRequest;
 import in.debagnik.catplotlib.model.Point2D;
 import in.debagnik.catplotlib.model.VectorStroke;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.commonmark.ext.autolink.AutolinkExtension;
 import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension;
 import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.*;
 import org.commonmark.parser.Parser;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -22,11 +22,24 @@ import java.util.*;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class MarkdownParserService {
 
     private final HersheyFontService fontService;
     private final SvgPathParserService svgParserService;
+    private final MathExpressionParserService mathParserService;
+
+    @Autowired
+    public MarkdownParserService(HersheyFontService fontService,
+                                 SvgPathParserService svgParserService,
+                                 MathExpressionParserService mathParserService) {
+        this.fontService = fontService;
+        this.svgParserService = svgParserService;
+        this.mathParserService = mathParserService;
+    }
+
+    public MarkdownParserService(HersheyFontService fontService, SvgPathParserService svgParserService) {
+        this(fontService, svgParserService, new MathExpressionParserService());
+    }
 
     public static class LayoutResult {
         public final List<VectorStroke> strokes;
@@ -487,7 +500,8 @@ public class MarkdownParserService {
     private String extractText(Node node) {
         StringBuilder sb = new StringBuilder();
         appendNodeText(node, sb);
-        return sb.toString();
+        String raw = sb.toString();
+        return mathParserService != null ? mathParserService.renderMathInText(raw) : raw;
     }
 
     private void appendNodeText(Node node, StringBuilder sb) {

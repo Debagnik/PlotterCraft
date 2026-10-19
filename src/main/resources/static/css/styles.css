@@ -158,3 +158,84 @@ input[type="range"]::-moz-range-thumb {
 #threeCanvas {
     outline: none;
 }
+
+/* Markdown & KaTeX Live Math Preview Styling */
+.markdown-preview-body h1 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #f8fafc;
+    border-bottom: 1px solid #2a2f3d;
+    padding-bottom: 0.35rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+.markdown-preview-body h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin-top: 0.65rem;
+    margin-bottom: 0.35rem;
+}
+.markdown-preview-body h3 {
+    font-size: 1.0rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin-top: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+.markdown-preview-body p {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+}
+.markdown-preview-body blockquote {
+    border-left: 3px solid #00ae42;
+    padding-left: 0.75rem;
+    color: #94a3b8;
+    background: rgba(30, 34, 45, 0.5);
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    margin: 0.5rem 0;
+    border-radius: 0 4px 4px 0;
+}
+.markdown-preview-body ul {
+    list-style-type: disc;
+    margin-left: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+.markdown-preview-body ol {
+    list-style-type: decimal;
+    margin-left: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+.markdown-preview-body code {
+    background: #1e222d;
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    color: #38bdf8;
+}
+.markdown-preview-body pre {
+    background: #161920;
+    border: 1px solid #2a2f3d;
+    border-radius: 8px;
+    padding: 0.75rem;
+    overflow-x: auto;
+    margin: 0.5rem 0;
+}
+.markdown-preview-body hr {
+    border: 0;
+    height: 1px;
+    background: #2a2f3d;
+    margin: 0.75rem 0;
+}
+.markdown-preview-body .katex {
+    font-size: 1.05em;
+    color: #34d399; /* emerald accent for math */
+}
+.markdown-preview-body .katex-display {
+    margin: 0.65rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.35rem 0;
+}

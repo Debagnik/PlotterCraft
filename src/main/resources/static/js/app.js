@@ -600,22 +600,77 @@ function initUIEventListeners() {
 
     // Tabs
     const tabBtnEditor = document.getElementById('tabBtnEditor');
+    const tabBtnPreview = document.getElementById('tabBtnPreview');
     const tabBtnSvgs = document.getElementById('tabBtnSvgs');
     const tabBtnSettings = document.getElementById('tabBtnSettings');
     const tabContentEditor = document.getElementById('tabContentEditor');
+    const tabContentPreview = document.getElementById('tabContentPreview');
     const tabContentSvgs = document.getElementById('tabContentSvgs');
     const tabContentSettings = document.getElementById('tabContentSettings');
 
     function switchTab(activeBtn, activeContent) {
-        [tabBtnEditor, tabBtnSvgs, tabBtnSettings].forEach(b => b.classList.remove('active', 'text-white'));
-        [tabContentEditor, tabContentSvgs, tabContentSettings].forEach(c => c.classList.add('hidden'));
-        activeBtn.classList.add('active', 'text-white');
-        activeContent.classList.remove('hidden');
+        [tabBtnEditor, tabBtnPreview, tabBtnSvgs, tabBtnSettings].forEach(b => {
+            if (b) b.classList.remove('active', 'text-white');
+        });
+        [tabContentEditor, tabContentPreview, tabContentSvgs, tabContentSettings].forEach(c => {
+            if (c) c.classList.add('hidden');
+        });
+        if (activeBtn) activeBtn.classList.add('active', 'text-white');
+        if (activeContent) activeContent.classList.remove('hidden');
+
+        if (activeBtn === tabBtnPreview) {
+            renderMarkdownAndMathPreview();
+        }
     }
 
-    tabBtnEditor.addEventListener('click', () => switchTab(tabBtnEditor, tabContentEditor));
-    tabBtnSvgs.addEventListener('click', () => switchTab(tabBtnSvgs, tabContentSvgs));
-    tabBtnSettings.addEventListener('click', () => switchTab(tabBtnSettings, tabContentSettings));
+    if (tabBtnEditor) tabBtnEditor.addEventListener('click', () => switchTab(tabBtnEditor, tabContentEditor));
+    if (tabBtnPreview) tabBtnPreview.addEventListener('click', () => switchTab(tabBtnPreview, tabContentPreview));
+    if (tabBtnSvgs) tabBtnSvgs.addEventListener('click', () => switchTab(tabBtnSvgs, tabContentSvgs));
+    if (tabBtnSettings) tabBtnSettings.addEventListener('click', () => switchTab(tabBtnSettings, tabContentSettings));
+
+    const btnRefreshPreview = document.getElementById('btnRefreshPreview');
+    if (btnRefreshPreview) {
+        btnRefreshPreview.addEventListener('click', renderMarkdownAndMathPreview);
+    }
+
+    function renderMarkdownAndMathPreview() {
+        const rawMd = document.getElementById('markdownInput').value;
+        const container = document.getElementById('markdownPreviewContainer');
+        if (!container) return;
+
+        if (window.marked) {
+            container.innerHTML = marked.parse(rawMd);
+        } else {
+            container.textContent = rawMd;
+        }
+
+        // Render embedded SVGs inside preview if present
+        const imgTags = container.querySelectorAll('img');
+        imgTags.forEach(img => {
+            const src = img.getAttribute('src');
+            if (src && (state.svgFiles[src] || state.svgFiles[src.split('/').pop()])) {
+                const svgXml = state.svgFiles[src] || state.svgFiles[src.split('/').pop()];
+                const div = document.createElement('div');
+                div.className = 'my-3 p-3 bg-white/5 border border-studio-border rounded-lg flex flex-col items-center justify-center';
+                div.innerHTML = `<div class="max-w-[80%] max-h-48 [&>svg]:max-h-48 [&>svg]:w-auto [&>svg]:stroke-emerald-400 [&>svg]:fill-none">${svgXml}</div>
+                                 <div class="text-[10px] text-slate-400 mt-1 font-mono">${img.alt || src}</div>`;
+                img.replaceWith(div);
+            }
+        });
+
+        if (window.renderMathInElement) {
+            renderMathInElement(container, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false },
+                    { left: '\\[', right: '\\]', display: true },
+                    { left: '\\(', right: '\\)', display: false }
+                ],
+                throwOnError: false
+            });
+        }
+        lucide.createIcons();
+    }
 
     // Markdown textarea change
     document.getElementById('markdownInput').addEventListener('input', updateCharCount);

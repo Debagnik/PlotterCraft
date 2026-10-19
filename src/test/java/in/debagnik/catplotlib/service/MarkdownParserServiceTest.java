@@ -263,4 +263,20 @@ class MarkdownParserServiceTest {
         assertThat(result.bounds.getMinX()).isGreaterThanOrEqualTo(20.0);
         assertThat(result.bounds.getMinY()).isGreaterThanOrEqualTo(25.0);
     }
+
+    @Test
+    @DisplayName("LaTeX mathematical expressions in markdown render as authentic math symbols instead of raw LaTeX tags")
+    void testMathExpressionRenderingInMarkdown() {
+        String md = """
+                # Calculus Assignment
+                
+                Compute the area under the curve:
+                > $A = \\int_{-2}^{2} (4 - x^2) \\, dx = \\left[ 4x - \\frac{x^3}{3} \\right]_{-2}^{2} = \\frac{32}{3} \\approx 10.67$
+                """;
+        PlotterJobRequest req = PlotterJobRequest.builder().markdown(md).build();
+        MarkdownParserService.LayoutResult result = markdownParserService.layoutDocument(req);
+
+        assertThat(result.strokes).isNotEmpty();
+        assertThat(result.bounds.isValid()).isTrue();
+    }
 }

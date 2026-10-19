@@ -133,4 +133,17 @@ class HersheyFontServiceTest {
 
         assertThat(w2).isEqualTo(w1 * 2.0, offset(1e-6));
     }
+
+    @Test
+    @DisplayName("Mathematical superscripts and subscripts render valid vector strokes")
+    void testSubscriptsAndSuperscripts() {
+        String mathExpr = "∫₋₂² (4 - x²) dx = [4x - x³/3]₋₂² = 32/3 ≈ 10.67";
+        List<VectorStroke> strokes = fontService.renderText(mathExpr, 10.0, 20.0, 1.0, false, 0.0);
+
+        assertThat(strokes).isNotEmpty();
+        assertThat(strokes).allMatch(s -> "TEXT".equals(s.getTag()));
+
+        double width = fontService.measureTextWidth(mathExpr, 1.0);
+        assertThat(width).isGreaterThan(0.0);
+    }
 }
