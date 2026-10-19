@@ -353,31 +353,55 @@
                 <div class="space-y-3">
                     <h4 class="font-semibold text-slate-300 flex items-center space-x-1.5">
                         <i data-lucide="layout" class="w-4 h-4 text-slate-400"></i>
-                        <span>A4 Sheet Alignment (210 mm Width & 256 mm Bed Length)</span>
+                        <span>Plotting Boundaries & Sheet Alignment</span>
                     </h4>
 
-                    <div class="p-3 bg-studio-card rounded-lg border border-studio-border text-[11px] text-slate-300 space-y-1.5">
-                        <div class="flex justify-between text-slate-400">
-                            <span>Standard A4 Width:</span>
-                            <span class="text-white font-mono font-semibold">210.0 mm</span>
+                    <div class="p-3 bg-studio-card rounded-lg border border-studio-border text-[11px] text-slate-300 space-y-2">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-slate-400 text-[10px] block mb-1">Boundary Width (mm)</label>
+                                <input type="number" id="inputBoundaryWidth" class="w-full bg-studio-panel border border-studio-border rounded px-2 py-1 text-slate-200 font-mono text-xs outline-none" th:value="${boundaryWidth}" value="210.0" step="1.0" min="50" max="256">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 text-[10px] block mb-1">Boundary Length (mm)</label>
+                                <input type="number" id="inputBoundaryLength" class="w-full bg-studio-panel border border-studio-border rounded px-2 py-1 text-slate-200 font-mono text-xs outline-none" th:value="${boundaryLength}" value="256.0" step="1.0" min="50" max="256">
+                            </div>
                         </div>
-                        <div class="flex justify-between text-slate-400">
-                            <span>Bambu A1 Usable Bed Length:</span>
-                            <span class="text-white font-mono font-semibold">256.0 mm (remainder blank)</span>
-                        </div>
-                        <div class="flex justify-between text-slate-400">
-                            <span>Bed Centering Blank Borders:</span>
-                            <span class="text-emerald-400 font-mono font-semibold">23.0 mm left & right</span>
+                        <div class="flex justify-between text-slate-400 pt-1 border-t border-studio-border/50">
+                            <span>Bed Centering Borders:</span>
+                            <span id="labelCenteringBorders" class="text-emerald-400 font-mono font-semibold">23.0 mm left & right</span>
                         </div>
                     </div>
 
                     <div class="bg-studio-card p-3 rounded-lg border border-studio-border space-y-1">
-                        <label class="text-slate-400 text-xs">Page Margins (inside A4 boundaries)</label>
+                        <label class="text-slate-400 text-xs">Page Margins (inside boundaries)</label>
                         <select id="selectMargins" class="w-full bg-studio-panel border border-studio-border rounded p-1.5 text-slate-200 outline-none text-xs">
                             <option value="15" selected>15 mm (Standard Margins)</option>
                             <option value="20">20 mm (Generous Margins)</option>
                             <option value="10">10 mm (Compact Margins)</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- Toolhead Nozzle Physical Offset -->
+                <div class="space-y-3">
+                    <h4 class="font-semibold text-slate-300 flex items-center space-x-1.5">
+                        <i data-lucide="crosshair" class="w-4 h-4 text-slate-400"></i>
+                        <span>Nozzle Physical Offset relative to Pen</span>
+                    </h4>
+
+                    <div class="bg-studio-card p-3 rounded-lg border border-studio-border space-y-2">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="text-slate-400 text-[10px] block mb-1">Offset -Y (mm)</label>
+                                <input type="number" id="inputNozzleOffsetY" class="w-full bg-studio-panel border border-studio-border rounded px-2 py-1 text-slate-200 font-mono text-xs outline-none" th:value="${nozzleOffsetY}" value="-35.0" step="0.5">
+                            </div>
+                            <div>
+                                <label class="text-slate-400 text-[10px] block mb-1">Offset X (mm)</label>
+                                <input type="number" id="inputNozzleOffsetX" class="w-full bg-studio-panel border border-studio-border rounded px-2 py-1 text-slate-200 font-mono text-xs outline-none" th:value="${nozzleOffsetX}" value="0.0" step="0.5">
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-400">Shifts printer carriage coordinates so the clamped pen tip aligns precisely with the plotting paper.</p>
                     </div>
                 </div>
 

@@ -211,6 +211,7 @@ class CatPlotLibTests {
 		);
 		plotterController.generateGcodeMultipart(
 				"# Test Multipart", 1400.0, 3500.0, 3.0, 0.0, true, 0.15, true, false,
+				210.0, 256.0, 0.0, -35.0,
 				new MockMultipartFile[]{svgFile}
 		);
 	}
@@ -263,7 +264,7 @@ class CatPlotLibTests {
 	}
 
 	@Test
-	@DisplayName("Generates flipped Cartesian G-code for assignment_plotter.gcode")
+	@DisplayName("Generates flipped Cartesian G-code with -35mm nozzle offset for assignment_plotter.gcode")
 	void testGenerateFlippedAssignmentGcode() throws Exception {
 		Map<String, Object> samples = pipelineService.getSampleAssignments();
 		@SuppressWarnings("unchecked")
@@ -281,6 +282,10 @@ class CatPlotLibTests {
 				.zDown(0.0)
 				.flipY(true)
 				.flipX(false)
+				.boundaryWidth(210.0)
+				.boundaryLength(256.0)
+				.nozzleOffsetX(0.0)
+				.nozzleOffsetY(-35.0)
 				.build();
 
 		PlotterJobResponse response = pipelineService.processJob(request);

@@ -88,15 +88,15 @@ class GcodeGeneratorServiceTest {
 
         String gcode = result.gcode;
 
-        // Verify travel move (with default flipY=true: 256.0 - 10.0 = 246.000)
+        // Verify travel move (with default flipY=true: 256.0 - 10.0 = 246.0, and nozzleOffsetY = -35.0 => Y = 211.000)
         assertThat(gcode).contains("G0 Z4.00 F1200 ; Pen Up");
-        assertThat(gcode).contains("G0 X10.000 Y246.000 F3000");
+        assertThat(gcode).contains("G0 X10.000 Y211.000 F3000");
 
         // Verify pen drop
         assertThat(gcode).contains("G1 Z0.20 F1000 ; Pen Down");
 
         // Verify drawing move
-        assertThat(gcode).contains("G1 X20.000 Y246.000 F1200");
+        assertThat(gcode).contains("G1 X20.000 Y211.000 F1200");
 
         // Verify pen lift at end
         assertThat(gcode).contains("G0 Z4.00 F1200 ; Pen Lift");
@@ -123,17 +123,39 @@ class GcodeGeneratorServiceTest {
         stroke.addPoint(10.0, 15.0);
         stroke.addPoint(50.0, 15.0);
 
-        // With flipY = false and flipX = true (bed 256x256)
+        // With flipY = false and flipX = true (bed 256x256, nozzleOffset=0)
         // startPt: X = 256 - 10 = 246.0, Y = 15.0
         // nextPt:  X = 256 - 50 = 206.0, Y = 15.0
         PlotterJobRequest request = PlotterJobRequest.builder()
                 .flipY(false)
                 .flipX(true)
+                .nozzleOffsetY(0.0)
                 .build();
 
         GcodeGeneratorService.GcodeGenerationResult result = gcodeService.generateGcode(List.of(stroke), request);
         assertThat(result.gcode).contains("G0 X246.000 Y15.000");
         assertThat(result.gcode).contains("G1 X206.000 Y15.000");
+    }
+
+    @Test
+    @DisplayName("Physical nozzle offset in -Y and X axes is applied to G-code motion")
+    void testNozzleOffsetConfiguration() {
+        VectorStroke stroke = new VectorStroke();
+        stroke.addPoint(10.0, 10.0);
+        stroke.addPoint(30.0, 10.0);
+
+        PlotterJobRequest request = PlotterJobRequest.builder()
+                .flipY(true)
+                .flipX(false)
+                .nozzleOffsetX(5.0)
+                .nozzleOffsetY(-35.0)
+                .build();
+
+        GcodeGeneratorService.GcodeGenerationResult result = gcodeService.generateGcode(List.of(stroke), request);
+        // Start: X = 10 + 5 = 15.000, Y = (256 - 10) + (-35) = 211.000
+        // Next:  X = 30 + 5 = 35.000, Y = (256 - 10) + (-35) = 211.000
+        assertThat(result.gcode).contains("G0 X15.000 Y211.000");
+        assertThat(result.gcode).contains("G1 X35.000 Y211.000");
     }
 
     @Test

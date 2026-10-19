@@ -1,5 +1,6 @@
 package in.debagnik.catplotlib.service;
 
+import in.debagnik.catplotlib.config.PlotterProperties;
 import in.debagnik.catplotlib.model.BoundingBox;
 import in.debagnik.catplotlib.model.PlotterJobRequest;
 import in.debagnik.catplotlib.model.Point2D;
@@ -27,18 +28,27 @@ public class MarkdownParserService {
     private final HersheyFontService fontService;
     private final SvgPathParserService svgParserService;
     private final MathExpressionParserService mathParserService;
+    private final PlotterProperties plotterProperties;
 
     @Autowired
     public MarkdownParserService(HersheyFontService fontService,
                                  SvgPathParserService svgParserService,
-                                 MathExpressionParserService mathParserService) {
+                                 MathExpressionParserService mathParserService,
+                                 PlotterProperties plotterProperties) {
         this.fontService = fontService;
         this.svgParserService = svgParserService;
         this.mathParserService = mathParserService;
+        this.plotterProperties = plotterProperties != null ? plotterProperties : new PlotterProperties();
+    }
+
+    public MarkdownParserService(HersheyFontService fontService,
+                                 SvgPathParserService svgParserService,
+                                 MathExpressionParserService mathParserService) {
+        this(fontService, svgParserService, mathParserService, new PlotterProperties());
     }
 
     public MarkdownParserService(HersheyFontService fontService, SvgPathParserService svgParserService) {
-        this(fontService, svgParserService, new MathExpressionParserService());
+        this(fontService, svgParserService, new MathExpressionParserService(), new PlotterProperties());
     }
 
     public static class LayoutResult {
@@ -73,12 +83,12 @@ public class MarkdownParserService {
 
         Node document = parser.parse(request.getMarkdown());
 
-        // Standard A4 width = 210 mm, Bambu Lab A1 Bed = 256 x 256 mm
-        // Usable page length = 256 mm (the rest of the 297 mm A4 page remains blank)
-        double bedWidth = 256.0;
-        double bedLength = 256.0; // Usable length on A1 bed
-        double a4Width = 210.0;   // Standard A4 width
-        double sheetOffsetX = (bedWidth - a4Width) / 2.0; // 23.0 mm left & right blank border
+        // Boundary and bed dimensions configurable via properties and request
+        double bedWidth = request.getPageWidth() > 0 ? request.getPageWidth() : plotterProperties.getBedWidth();
+        double bedLength = request.getPageHeight() > 0 ? request.getPageHeight() : plotterProperties.getBedLength();
+        double boundaryWidth = request.getBoundaryWidth() > 0 ? request.getBoundaryWidth() : plotterProperties.getBoundaryWidth();
+        double boundaryLength = request.getBoundaryLength() > 0 ? request.getBoundaryLength() : plotterProperties.getBoundaryLength();
+        double sheetOffsetX = (bedWidth - boundaryWidth) / 2.0; // blank border for centering boundary
 
         double marginLeft = request.getMarginLeft() > 0 ? request.getMarginLeft() : 15.0;
         double marginRight = request.getMarginRight() > 0 ? request.getMarginRight() : 15.0;
@@ -86,9 +96,9 @@ public class MarkdownParserService {
         double marginBottom = request.getMarginBottom() > 0 ? request.getMarginBottom() : 15.0;
 
         double minX = sheetOffsetX + marginLeft;
-        double maxX = sheetOffsetX + a4Width - marginRight;
+        double maxX = sheetOffsetX + boundaryWidth - marginRight;
         double printableWidth = maxX - minX;
-        double maxY = bedLength - marginBottom;
+        double maxY = boundaryLength - marginBottom;
 
         double baseScale = request.getFontScale() > 0 ? request.getFontScale() : 1.0;
         double baseLineHeight = 5.2 * baseScale * request.getLineSpacing();

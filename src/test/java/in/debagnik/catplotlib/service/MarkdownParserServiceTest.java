@@ -300,4 +300,20 @@ class MarkdownParserServiceTest {
         // Ensure strokes fit within bounds
         assertThat(result.bounds.getMaxX()).isLessThanOrEqualTo(256.0);
     }
+
+    @Test
+    @DisplayName("Custom boundary dimensions are respected during document layout")
+    void testCustomBoundaryDimensions() {
+        PlotterJobRequest req = PlotterJobRequest.builder()
+                .markdown("# Boundary Test")
+                .boundaryWidth(150.0)
+                .boundaryLength(200.0)
+                .pageWidth(256.0)
+                .pageHeight(256.0)
+                .build();
+        MarkdownParserService.LayoutResult result = markdownParserService.layoutDocument(req);
+        assertThat(result.bounds.isValid()).isTrue();
+        // Strokes must remain within the 150mm boundary + centering offset (53mm): maxX <= 203.0
+        assertThat(result.bounds.getMaxX()).isLessThanOrEqualTo(203.0);
+    }
 }

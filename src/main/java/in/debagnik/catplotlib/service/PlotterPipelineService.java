@@ -1,10 +1,11 @@
 package in.debagnik.catplotlib.service;
 
+import in.debagnik.catplotlib.config.PlotterProperties;
 import in.debagnik.catplotlib.model.*;
 import in.debagnik.catplotlib.service.GcodeGeneratorService.GcodeGenerationResult;
 import in.debagnik.catplotlib.service.MarkdownParserService.LayoutResult;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -16,17 +17,36 @@ import java.util.Map;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class PlotterPipelineService {
 
     private final MarkdownParserService markdownParserService;
     private final GcodeGeneratorService gcodeGeneratorService;
+    private final PlotterProperties plotterProperties;
+
+    @Autowired
+    public PlotterPipelineService(MarkdownParserService markdownParserService,
+                                  GcodeGeneratorService gcodeGeneratorService,
+                                  PlotterProperties plotterProperties) {
+        this.markdownParserService = markdownParserService;
+        this.gcodeGeneratorService = gcodeGeneratorService;
+        this.plotterProperties = plotterProperties != null ? plotterProperties : new PlotterProperties();
+    }
+
+    public PlotterPipelineService(MarkdownParserService markdownParserService,
+                                  GcodeGeneratorService gcodeGeneratorService) {
+        this(markdownParserService, gcodeGeneratorService, new PlotterProperties());
+    }
 
     public PlotterJobResponse processJob(PlotterJobRequest request) {
         try {
-            // Apply sane defaults if omitted
-            if (request.getPageWidth() <= 0) request.setPageWidth(256.0);
-            if (request.getPageHeight() <= 0) request.setPageHeight(256.0);
+            // Apply sane defaults from configuration properties if omitted
+            if (request.getPageWidth() <= 0) request.setPageWidth(plotterProperties.getBedWidth());
+            if (request.getPageHeight() <= 0) request.setPageHeight(plotterProperties.getBedLength());
+            if (request.getBoundaryWidth() <= 0) request.setBoundaryWidth(plotterProperties.getBoundaryWidth());
+            if (request.getBoundaryLength() <= 0) request.setBoundaryLength(plotterProperties.getBoundaryLength());
+            if (request.getRawNozzleOffsetX() == null) request.setNozzleOffsetX(plotterProperties.getNozzleOffsetX());
+            if (request.getRawNozzleOffsetY() == null) request.setNozzleOffsetY(plotterProperties.getNozzleOffsetY());
+
             if (request.getFeedrateDraw() <= 0) request.setFeedrateDraw(1400.0);
             if (request.getFeedrateTravel() <= 0) request.setFeedrateTravel(3500.0);
             if (request.getFontScale() <= 0) request.setFontScale(1.0);

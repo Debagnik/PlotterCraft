@@ -167,6 +167,7 @@ class PlotterControllerTest {
         PlotterController controller = new PlotterController(pipelineService);
         controller.generateGcodeMultipart(
                 "# Test", 1400.0, 3500.0, 3.0, 0.0, true, 0.15, true, false,
+                210.0, 256.0, 0.0, -35.0,
                 new org.springframework.web.multipart.MultipartFile[]{faultyFile}
         );
 
@@ -183,7 +184,7 @@ class PlotterControllerTest {
     }
 
     @Test
-    @DisplayName("POST /api/generate-gcode-multipart passes flipY and flipX options correctly")
+    @DisplayName("POST /api/generate-gcode-multipart passes flipY, boundary, and nozzle offset options correctly")
     void testMultipartWithFlipOptions() throws Exception {
         PlotterJobResponse mockResponse = PlotterJobResponse.builder().success(true).build();
         when(pipelineService.processJob(any())).thenReturn(mockResponse);
@@ -195,7 +196,10 @@ class PlotterControllerTest {
                         .file(file)
                         .param("markdown", "# Flipping Test")
                         .param("flipY", "true")
-                        .param("flipX", "true"))
+                        .param("flipX", "true")
+                        .param("boundaryWidth", "210.0")
+                        .param("boundaryLength", "256.0")
+                        .param("nozzleOffsetY", "-35.0"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }

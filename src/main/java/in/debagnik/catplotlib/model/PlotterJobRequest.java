@@ -74,6 +74,20 @@ public class PlotterJobRequest {
     @Builder.Default
     private Boolean flipX = false;
 
+    // Plotting Boundaries (e.g., standard A4: 210mm x 256mm)
+    @Builder.Default
+    private Double boundaryWidth = 210.0;
+
+    @Builder.Default
+    private Double boundaryLength = 256.0;
+
+    // Physical Nozzle Offset relative to Pen Mount (mm)
+    @Builder.Default
+    private Double nozzleOffsetX = 0.0;
+
+    @Builder.Default
+    private Double nozzleOffsetY = -35.0;
+
     public double getFeedrateDraw() { return feedrateDraw != null ? feedrateDraw : 1400.0; }
     public double getFeedrateTravel() { return feedrateTravel != null ? feedrateTravel : 3500.0; }
     public double getZUp() { return zUp != null ? zUp : 3.0; }
@@ -90,4 +104,10 @@ public class PlotterJobRequest {
     public double getLineSpacing() { return lineSpacing != null ? lineSpacing : 1.4; }
     public boolean isFlipY() { return flipY != null ? flipY : true; }
     public boolean isFlipX() { return flipX != null ? flipX : false; }
+    public double getBoundaryWidth() { return boundaryWidth != null ? boundaryWidth : 210.0; }
+    public double getBoundaryLength() { return boundaryLength != null ? boundaryLength : 256.0; }
+    public double getNozzleOffsetX() { return nozzleOffsetX != null ? nozzleOffsetX : 0.0; }
+    public double getNozzleOffsetY() { return nozzleOffsetY != null ? nozzleOffsetY : -35.0; }
+    public Double getRawNozzleOffsetX() { return nozzleOffsetX; }
+    public Double getRawNozzleOffsetY() { return nozzleOffsetY; }
 }

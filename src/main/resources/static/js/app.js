@@ -123,11 +123,11 @@ function createBambuA1Bed() {
     volumeLine.position.set(128, 128, 128);
     bedGroup.add(volumeLine);
 
-    // Paper Sheet Mesh: Standard A4 width (210mm) centered on 256mm bed
-    // Usable page length = 256 mm (remainder of 297mm A4 goes blank beyond bed)
-    // Horizontal centering: (256 - 210) / 2 = 23 mm margin on left and right
-    const a4Width = 210.0;
-    const a4LengthOnBed = 256.0;
+    // Paper Sheet Mesh: Configured boundary dimensions centered on 256mm bed
+    const bwInput = document.getElementById('inputBoundaryWidth');
+    const blInput = document.getElementById('inputBoundaryLength');
+    const a4Width = bwInput ? (parseFloat(bwInput.value) || 210.0) : 210.0;
+    const a4LengthOnBed = blInput ? (parseFloat(blInput.value) || 256.0) : 256.0;
     const paperGeo = new THREE.PlaneGeometry(a4Width, a4LengthOnBed);
     const paperMat = new THREE.MeshStandardMaterial({
         color: 0xffffff,
@@ -445,7 +445,11 @@ async function handleGenerateGcode() {
         marginTop: parseFloat(document.getElementById('selectMargins').value),
         marginBottom: parseFloat(document.getElementById('selectMargins').value),
         flipY: document.getElementById('checkFlipY') ? document.getElementById('checkFlipY').checked : true,
-        flipX: document.getElementById('checkFlipX') ? document.getElementById('checkFlipX').checked : false
+        flipX: document.getElementById('checkFlipX') ? document.getElementById('checkFlipX').checked : false,
+        boundaryWidth: parseFloat(document.getElementById('inputBoundaryWidth') ? document.getElementById('inputBoundaryWidth').value : 210.0),
+        boundaryLength: parseFloat(document.getElementById('inputBoundaryLength') ? document.getElementById('inputBoundaryLength').value : 256.0),
+        nozzleOffsetX: parseFloat(document.getElementById('inputNozzleOffsetX') ? document.getElementById('inputNozzleOffsetX').value : 0.0),
+        nozzleOffsetY: parseFloat(document.getElementById('inputNozzleOffsetY') ? document.getElementById('inputNozzleOffsetY').value : -35.0)
     };
 
     try {

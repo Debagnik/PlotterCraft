@@ -100,10 +100,45 @@ class PlotterPipelineServiceTest {
         assertThat(response.isSuccess()).isTrue();
         assertThat(request.getPageWidth()).isEqualTo(256.0);
         assertThat(request.getPageHeight()).isEqualTo(256.0);
+        assertThat(request.getBoundaryWidth()).isEqualTo(210.0);
+        assertThat(request.getBoundaryLength()).isEqualTo(256.0);
+        assertThat(request.getNozzleOffsetX()).isEqualTo(0.0);
+        assertThat(request.getNozzleOffsetY()).isEqualTo(-35.0);
         assertThat(request.getFeedrateDraw()).isEqualTo(1400.0);
         assertThat(request.getFeedrateTravel()).isEqualTo(3500.0);
         assertThat(request.getFontScale()).isEqualTo(1.0);
         assertThat(request.getLineSpacing()).isEqualTo(1.4);
+    }
+
+    @Test
+    @DisplayName("processJob applies custom PlotterProperties values")
+    void testProcessJobCustomPlotterProperties() {
+        in.debagnik.catplotlib.config.PlotterProperties customProps = new in.debagnik.catplotlib.config.PlotterProperties();
+        customProps.setBoundaryWidth(180.0);
+        customProps.setBoundaryLength(240.0);
+        customProps.setNozzleOffsetY(-40.0);
+
+        PlotterPipelineService customService = new PlotterPipelineService(
+                mockMarkdownParserService, mockGcodeGeneratorService, customProps
+        );
+
+        PlotterJobRequest request = PlotterJobRequest.builder()
+                .markdown("# Test")
+                .boundaryWidth(0.0)
+                .boundaryLength(0.0)
+                .nozzleOffsetY(null)
+                .build();
+
+        when(mockMarkdownParserService.layoutDocument(any()))
+                .thenReturn(new MarkdownParserService.LayoutResult(List.of(), BoundingBox.empty(), List.of()));
+        when(mockGcodeGeneratorService.generateGcode(any(), any()))
+                .thenReturn(new GcodeGeneratorService.GcodeGenerationResult("; gcode", List.of(), null));
+
+        PlotterJobResponse res = customService.processJob(request);
+        assertThat(res.isSuccess()).isTrue();
+        assertThat(request.getBoundaryWidth()).isEqualTo(180.0);
+        assertThat(request.getBoundaryLength()).isEqualTo(240.0);
+        assertThat(request.getNozzleOffsetY()).isEqualTo(-40.0);
     }
 
     @Test

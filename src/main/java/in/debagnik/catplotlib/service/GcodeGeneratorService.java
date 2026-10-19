@@ -1,6 +1,8 @@
 package in.debagnik.catplotlib.service;
 
+import in.debagnik.catplotlib.config.PlotterProperties;
 import in.debagnik.catplotlib.model.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -17,6 +19,17 @@ import java.util.Locale;
  */
 @Service
 public class GcodeGeneratorService {
+
+    private final PlotterProperties plotterProperties;
+
+    @Autowired
+    public GcodeGeneratorService(PlotterProperties plotterProperties) {
+        this.plotterProperties = plotterProperties != null ? plotterProperties : new PlotterProperties();
+    }
+
+    public GcodeGeneratorService() {
+        this(new PlotterProperties());
+    }
 
     public static class GcodeGenerationResult {
         public final String gcode;
@@ -43,8 +56,11 @@ public class GcodeGeneratorService {
 
         boolean flipY = request.isFlipY();
         boolean flipX = request.isFlipX();
-        double pageHeight = request.getPageHeight();
-        double pageWidth = request.getPageWidth();
+        double pageHeight = request.getPageHeight() > 0 ? request.getPageHeight() : plotterProperties.getBedLength();
+        double pageWidth = request.getPageWidth() > 0 ? request.getPageWidth() : plotterProperties.getBedWidth();
+
+        double nozzleOffsetX = request.getNozzleOffsetX();
+        double nozzleOffsetY = request.getNozzleOffsetY();
 
         // Statistics accumulators
         double totalDrawDistance = 0.0;
@@ -65,8 +81,8 @@ public class GcodeGeneratorService {
             if (pts == null || pts.size() < 2) continue;
 
             Point2D startPt = pts.get(0);
-            double sx = flipX ? (pageWidth - startPt.getX()) : startPt.getX();
-            double sy = flipY ? (pageHeight - startPt.getY()) : startPt.getY();
+            double sx = (flipX ? (pageWidth - startPt.getX()) : startPt.getX()) + nozzleOffsetX;
+            double sy = (flipY ? (pageHeight - startPt.getY()) : startPt.getY()) + nozzleOffsetY;
 
             // A. Aerial Travel Move to Stroke Start Point (G0 with pen up)
             if (curX != sx || curY != sy || curZ != zUp) {
@@ -114,8 +130,8 @@ public class GcodeGeneratorService {
             // C. Drawing Moves (G1 along stroke points)
             for (int i = 1; i < pts.size(); i++) {
                 Point2D nextPt = pts.get(i);
-                double nx = flipX ? (pageWidth - nextPt.getX()) : nextPt.getX();
-                double ny = flipY ? (pageHeight - nextPt.getY()) : nextPt.getY();
+                double nx = (flipX ? (pageWidth - nextPt.getX()) : nextPt.getX()) + nozzleOffsetX;
+                double ny = (flipY ? (pageHeight - nextPt.getY()) : nextPt.getY()) + nozzleOffsetY;
                 double drawDist = Math.hypot(nx - curX, ny - curY);
                 if (drawDist < 0.001) continue; // Skip identical duplicate points
 

@@ -1,13 +1,14 @@
 package in.debagnik.catplotlib.controller;
 
+import in.debagnik.catplotlib.config.PlotterProperties;
 import in.debagnik.catplotlib.model.PlotterJobRequest;
 import in.debagnik.catplotlib.model.PlotterJobResponse;
 import in.debagnik.catplotlib.service.PlotterPipelineService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -22,16 +23,32 @@ import java.util.Map;
 
 @Slf4j
 @Controller
-@RequiredArgsConstructor
 @Tag(name = "Plotter Engine", description = "Endpoints for generating safe Bambu Lab A1 G-code, toolpath simulation moves, and downloads")
 public class PlotterController {
 
     private final PlotterPipelineService pipelineService;
+    private final PlotterProperties plotterProperties;
+
+    @Autowired
+    public PlotterController(PlotterPipelineService pipelineService, PlotterProperties plotterProperties) {
+        this.pipelineService = pipelineService;
+        this.plotterProperties = plotterProperties != null ? plotterProperties : new PlotterProperties();
+    }
+
+    public PlotterController(PlotterPipelineService pipelineService) {
+        this(pipelineService, new PlotterProperties());
+    }
 
     @GetMapping("/")
     @Operation(summary = "Render Studio UI", description = "Serves the main interactive CatPlotLib web studio interface.")
     public String index(Model model) {
         model.addAttribute("title", "CatPlotLib - Bambu Lab A1 Plotter Studio");
+        model.addAttribute("boundaryWidth", plotterProperties.getBoundaryWidth());
+        model.addAttribute("boundaryLength", plotterProperties.getBoundaryLength());
+        model.addAttribute("bedWidth", plotterProperties.getBedWidth());
+        model.addAttribute("bedLength", plotterProperties.getBedLength());
+        model.addAttribute("nozzleOffsetX", plotterProperties.getNozzleOffsetX());
+        model.addAttribute("nozzleOffsetY", plotterProperties.getNozzleOffsetY());
         return "index";
     }
 
@@ -58,6 +75,10 @@ public class PlotterController {
             @Parameter(description = "Jitter intensity factor") @RequestParam(value = "jitterIntensity", defaultValue = "0.15") double jitterIntensity,
             @Parameter(description = "Invert Y axis for Cartesian bed") @RequestParam(value = "flipY", defaultValue = "true") boolean flipY,
             @Parameter(description = "Mirror X axis") @RequestParam(value = "flipX", defaultValue = "false") boolean flipX,
+            @Parameter(description = "Plotting boundary width in mm") @RequestParam(value = "boundaryWidth", defaultValue = "210.0") double boundaryWidth,
+            @Parameter(description = "Plotting boundary length in mm") @RequestParam(value = "boundaryLength", defaultValue = "256.0") double boundaryLength,
+            @Parameter(description = "Nozzle offset in X axis in mm") @RequestParam(value = "nozzleOffsetX", defaultValue = "0.0") double nozzleOffsetX,
+            @Parameter(description = "Nozzle offset in -Y axis in mm") @RequestParam(value = "nozzleOffsetY", defaultValue = "-35.0") double nozzleOffsetY,
             @Parameter(description = "Attached SVG diagram files") @RequestParam(value = "svgFiles", required = false) MultipartFile[] svgFiles) {
 
         Map<String, String> svgMap = new HashMap<>();
@@ -85,6 +106,10 @@ public class PlotterController {
                 .jitterIntensity(jitterIntensity)
                 .flipY(flipY)
                 .flipX(flipX)
+                .boundaryWidth(boundaryWidth)
+                .boundaryLength(boundaryLength)
+                .nozzleOffsetX(nozzleOffsetX)
+                .nozzleOffsetY(nozzleOffsetY)
                 .pageWidth(256.0)
                 .pageHeight(256.0)
                 .build();
