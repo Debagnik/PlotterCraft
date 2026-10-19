@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlotterCraft - Bambu Lab A1 Plotter Studio</title>
+    <meta name="description" content="Convert Markdown assignments with embedded stylus SVG diagrams into safe Bambu Lab A1 plotter G-code with interactive 3D slicer toolpath preview.">
+    
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        bambu: {
+                            50: '#ecfdf5',
+                            500: '#00ae42', // Bambu green
+                            600: '#009237',
+                            700: '#00742b',
+                        },
+                        studio: {
+                            bg: '#0f1115',
+                            panel: '#161920',
+                            card: '#1e222d',
+                            border: '#2a2f3d',
+                            hover: '#343a4c'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Three.js & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/styles.css?v=2">
+</head>
+<body class="bg-studio-bg text-slate-100 font-sans antialiased h-screen flex flex-col overflow-hidden">
+
+    <!-- Top Navigation Bar -->
+    <header class="h-14 border-b border-studio-border bg-studio-panel px-4 flex items-center justify-between z-20 shrink-0">
+        <!-- Logo & Branding -->
+        <div class="flex items-center space-x-3">
+            <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-bambu-600 to-emerald-400 flex items-center justify-center shadow-lg shadow-bambu-500/20">
+                <i data-lucide="pen-tool" class="w-5 h-5 text-white"></i>
+            </div>
+            <div>
+                <div class="flex items-center space-x-2">
+                    <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">PlotterCraft</span>
+                    <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-bambu-500/20 text-bambu-500 border border-bambu-500/30">Bambu A1 Safe</span>
+                </div>
+                <div class="text-[11px] text-slate-400">Markdown & Stylus SVG to Safe Plotter G-Code</div>
+            </div>
+        </div>
+
+        <!-- Center Controls: Samples & Presets -->
+        <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-1.5 bg-studio-card px-3 py-1.5 rounded-lg border border-studio-border text-xs text-slate-300">
+                <i data-lucide="file-code" class="w-4 h-4 text-slate-400"></i>
+                <span class="font-medium">Load Assignment Sample:</span>
+                <button id="btnLoadPhysics" class="px-2.5 py-1 bg-studio-hover hover:bg-studio-border rounded text-xs font-medium hover:text-white transition">Physics RLC</button>
+                <button id="btnLoadCalculus" class="px-2.5 py-1 bg-studio-hover hover:bg-studio-border rounded text-xs font-medium hover:text-white transition">Math Curves</button>
+            </div>
+        </div>
+
+        <!-- Action Buttons: Generate & Download -->
+        <div class="flex items-center space-x-2.5">
+            <button id="btnToggleGcodeModal" class="px-3.5 py-1.5 rounded-lg border border-studio-border bg-studio-card hover:bg-studio-hover text-xs font-medium text-slate-200 flex items-center space-x-1.5 transition">
+                <i data-lucide="code" class="w-4 h-4"></i>
+                <span>View G-code</span>
+            </button>
+            
+            <button id="btnDownloadGcode" class="px-3.5 py-1.5 rounded-lg border border-studio-border bg-studio-card hover:bg-studio-hover text-xs font-medium text-slate-200 flex items-center space-x-1.5 transition" disabled>
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Export .gcode</span>
+            </button>
+
+            <button id="btnGenerateGcode" class="px-4 py-2 rounded-lg bg-bambu-500 hover:bg-bambu-600 active:bg-bambu-700 text-white text-xs font-semibold flex items-center space-x-2 shadow-lg shadow-bambu-500/20 transition disabled:opacity-50">
+                <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                <span>Generate Toolpath</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Split-Pane Workspace -->
+    <div class="flex-1 flex overflow-hidden">
+
+        <!-- LEFT PANE: Editor & Calibration Settings (45% Width) -->
+        <div class="w-[45%] border-r border-studio-border flex flex-col bg-studio-panel">
+            
+            <!-- Tab Navigation Header -->
+            <div class="h-10 border-b border-studio-border bg-studio-panel px-3 flex items-center justify-between text-xs shrink-0">
+                <div class="flex space-x-1">
+                    <button id="tabBtnEditor" class="tab-btn active px-3 py-1.5 rounded font-medium flex items-center space-x-1.5">
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                        <span>Markdown & Diagrams</span>
+                    </button>
+                    <button id="tabBtnSvgs" class="tab-btn px-3 py-1.5 rounded font-medium flex items-center space-x-1.5 text-slate-400 hover:text-slate-200">
+                        <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                        <span>SVG Assets</span>
+                        <span id="svgBadgeCount" class="ml-1 px-1.5 py-0.2 bg-studio-border text-[10px] rounded-full">1</span>
+                    </button>
+                    <button id="tabBtnSettings" class="tab-btn px-3 py-1.5 rounded font-medium flex items-center space-x-1.5 text-slate-400 hover:text-slate-200">
+                        <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+                        <span>Motion & Safety</span>
+                    </button>
+                </div>
+
+                <!-- Jitter Quick Indicator -->
+                <div class="flex items-center space-x-1.5 text-[11px] text-slate-400">
+                    <i data-lucide="fingerprint" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    <span>Human Jitter:</span>
+                    <span id="jitterStatusTag" class="text-emerald-400 font-semibold">ON (±0.15mm)</span>
+                </div>
+            </div>
+
+            <!-- Tab Content 1: Markdown Editor with Dedicated Plot & Font Scale Panel -->
+            <div id="tabContentEditor" class="flex-1 flex flex-col p-3 overflow-hidden">
+                
+                <!-- Dedicated Plot & Font Scale Control Panel (Full Width, Spacious, 4-Way Control) -->
+                <div class="bg-studio-card border border-studio-border rounded-xl p-3 mb-3 shadow-lg flex flex-col space-y-2.5 shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <div class="w-7 h-7 rounded-lg bg-bambu-500/15 border border-bambu-500/30 flex items-center justify-center text-bambu-500 shadow-sm">
+                                <i data-lucide="scaling" class="w-4 h-4"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-xs font-bold text-white tracking-wide">Plot & Font Scale</span>
+                                    <span id="valFontScaleBadge" class="font-mono text-xs font-bold text-bambu-400 bg-bambu-500/15 px-2 py-0.5 rounded border border-bambu-500/30">1.00x</span>
+                                </div>
+                                <div class="text-[10px] text-slate-400">Scales Hershey single-stroke fonts & vector diagrams uniformly</div>
+                            </div>
+                        </div>
+
+                        <!-- Steppers & Direct Numeric Input -->
+                        <div class="flex items-center space-x-1.5">
+                            <button id="btnScaleDown" type="button" class="w-7 h-7 rounded-lg bg-studio-panel hover:bg-studio-hover active:bg-bambu-500/20 border border-studio-border flex items-center justify-center text-slate-200 hover:text-white font-bold transition text-sm select-none shadow-sm" title="Decrease scale by 0.05x (Hold to repeat)">-</button>
+                            
+                            <div class="flex items-center bg-studio-panel border border-studio-border rounded-lg px-2 py-1 space-x-1 focus-within:border-bambu-500 shadow-inner">
+                                <input type="number" id="inputFontScaleNumber" min="0.5" max="1.8" step="0.05" value="1.00" class="w-11 bg-transparent text-right font-mono text-xs font-bold text-bambu-400 outline-none" title="Directly enter plot scale (0.50x to 1.80x)">
+                                <span class="text-[11px] font-mono text-slate-400">x</span>
+                            </div>
+
+                            <button id="btnScaleUp" type="button" class="w-7 h-7 rounded-lg bg-studio-panel hover:bg-studio-hover active:bg-bambu-500/20 border border-studio-border flex items-center justify-center text-slate-200 hover:text-white font-bold transition text-sm select-none shadow-sm" title="Increase scale by 0.05x (Hold to repeat)">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Wide Smooth Slider with Fill & Preset Quick Buttons -->
+                    <div class="flex items-center space-x-3 pt-0.5">
+                        <!-- Easy-to-slide Range Input with Tick Markers -->
+                        <div class="flex-1 flex flex-col justify-center">
+                            <input type="range" id="inputFontScale" min="0.5" max="1.8" step="0.05" value="1.0" class="w-full" title="Slide to adjust overall plotting scale">
+                            <div class="flex justify-between text-[9px] text-slate-500 font-mono px-0.5 mt-0.5 select-none">
+                                <span>0.50x</span>
+                                <span>0.75x</span>
+                                <span class="text-slate-400 font-semibold">1.00x</span>
+                                <span>1.25x</span>
+                                <span>1.50x</span>
+                                <span>1.80x</span>
+                            </div>
+                        </div>
+
+                        <!-- 1-Click Quick Presets -->
+                        <div class="flex items-center space-x-1 shrink-0">
+                            <button type="button" class="btn-scale-preset px-2 py-1 bg-studio-panel hover:bg-studio-hover border border-studio-border rounded-md text-[11px] font-mono text-slate-300 hover:text-white transition" data-scale="0.75" title="Set scale to 0.75x (Compact)">0.75x</button>
+                            <button type="button" class="btn-scale-preset active px-2 py-1 bg-bambu-500/20 border border-bambu-500/40 rounded-md text-[11px] font-mono text-bambu-400 font-semibold transition" data-scale="1.0" title="Set scale to 1.00x (Standard)">1.00x</button>
+                            <button type="button" class="btn-scale-preset px-2 py-1 bg-studio-panel hover:bg-studio-hover border border-studio-border rounded-md text-[11px] font-mono text-slate-300 hover:text-white transition" data-scale="1.25" title="Set scale to 1.25x (Medium)">1.25x</button>
+                            <button type="button" class="btn-scale-preset px-2 py-1 bg-studio-panel hover:bg-studio-hover border border-studio-border rounded-md text-[11px] font-mono text-slate-300 hover:text-white transition" data-scale="1.50" title="Set scale to 1.50x (Large)">1.50x</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Markdown Input Header & Centering Badge -->
+                <div class="flex items-center justify-between mb-2 text-xs text-slate-400 shrink-0">
+                    <div class="flex items-center space-x-2">
+                        <span class="font-medium text-slate-300">Assignment Markdown Input</span>
+                        <span class="text-[10px] text-slate-500 font-mono">Embed diagrams with ![alt](filename.svg)</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[10px] text-emerald-400/90 font-mono bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">A4 Width (210mm) Centered</span>
+                        <span id="charCountLabel" class="font-mono text-[11px] text-slate-500">0 chars</span>
+                    </div>
+                </div>
+                
+                <!-- Markdown Textarea -->
+                <div class="flex-1 relative rounded-lg border border-studio-border bg-studio-card/60 overflow-hidden focus-within:border-bambu-500/70 transition">
+                    <textarea id="markdownInput" class="w-full h-full p-3 bg-transparent font-mono text-xs text-slate-200 resize-none outline-none leading-relaxed" spellcheck="false" placeholder="Type or paste your Markdown assignment here..."></textarea>
+                </div>
+            </div>
+
+            <!-- Tab Content 2: SVG Assets Manager -->
+            <div id="tabContentSvgs" class="flex-1 p-4 overflow-y-auto hidden space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-200">Attached Vector SVG Diagrams</h3>
+                        <p class="text-xs text-slate-400">Referenced in Markdown via ![alt](filename.svg)</p>
+                    </div>
+                    <label class="px-3 py-1.5 bg-studio-card hover:bg-studio-hover border border-studio-border rounded-lg text-xs font-medium cursor-pointer flex items-center space-x-1.5 text-slate-200 transition">
+                        <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+                        <span>Upload .svg File</span>
+                        <input type="file" id="svgFileInput" accept=".svg" class="hidden" multiple>
+                    </label>
+                </div>
+
+                <!-- SVG List Container -->
+                <div id="svgListContainer" class="space-y-3">
+                    <!-- Dynamic SVG items rendered here -->
+                </div>
+            </div>
+
+            <!-- Tab Content 3: Motion & Safety Calibration Settings -->
+            <div id="tabContentSettings" class="flex-1 p-4 overflow-y-auto hidden space-y-5 text-xs">
+                
+                <!-- Safety Rules Banner -->
+                <div class="p-3 rounded-lg border border-emerald-500/30 bg-emerald-950/20 text-emerald-300 space-y-1">
+                    <div class="flex items-center space-x-1.5 font-semibold text-xs">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+                        <span>Bambu Lab A1 Plotter Safety Enforced</span>
+                    </div>
+                    <p class="text-[11px] text-emerald-300/80 leading-normal">
+                        M104 S0 (Zero Heat), M140 S0 (Bed Off), M106 S0 (Fans Off). Stock purge, nozzle wipe, and bed-leveling probe macros are bypassed to prevent physical pen head collisions.
+                    </p>
+                </div>
+
+                <!-- Motion Speed Parameters -->
+                <div class="space-y-3">
+                    <h4 class="font-semibold text-slate-300 flex items-center space-x-1.5">
+                        <i data-lucide="gauge" class="w-4 h-4 text-slate-400"></i>
+                        <span>Kinematics & Speeds</span>
+                    </h4>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-studio-card p-3 rounded-lg border border-studio-border space-y-1.5">
+                            <label class="text-slate-400 flex justify-between">
+                                <span>Draw Feedrate (G1)</span>
+                                <span id="valDrawFeedrate" class="font-mono text-white font-medium">1400 mm/min</span>
+                            </label>
+                            <input type="range" id="inputDrawFeedrate" min="400" max="3000" step="50" value="1400" class="w-full accent-bambu-500">
+                        </div>
+
+                        <div class="bg-studio-card p-3 rounded-lg border border-studio-border space-y-1.5">
+                            <label class="text-slate-400 flex justify-between">
+                                <span>Travel Feedrate (G0)</span>
+                                <span id="valTravelFeedrate" class="font-mono text-white font-medium">3500 mm/min</span>
+                            </label>
+                            <input type="range" id="inputTravelFeedrate" min="1000" max="6000" step="100" value="3500" class="w-full accent-bambu-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pen Height Parameters -->
+                <div class="space-y-3">
+                    <h4 class="font-semibold text-slate-300 flex items-center space-x-1.5">
+                        <i data-lucide="move-vertical" class="w-4 h-4 text-slate-400"></i>
+                        <span>Stylus Z-Heights</span>
+                    </h4>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-studio-card p-3 rounded-lg border border-studio-border space-y-1.5">
+                            <label class="text-slate-400 flex justify-between">
+                                <span>Pen Up Clearance (Z_up)</span>
+                                <span id="valZUp" class="font-mono text-white font-medium">3.0 mm</span>
+                            </label>
+                            <input type="range" id="inputZUp" min="1.0" max="8.0" step="0.5" value="3.0" class="w-full accent-bambu-500">
+                        </div>
+
+                        <div class="bg-studio-card p-3 rounded-lg border border-studio-border space-y-1.5">
+                            <label class="text-slate-400 flex justify-between">
+                                <span>Pen Down Contact (Z_down)</span>
+                                <span id="valZDown" class="font-mono text-white font-medium">0.0 mm</span>
+                            </label>
+                            <input type="range" id="inputZDown" min="-1.0" max="1.5" step="0.1" value="0.0" class="w-full accent-bambu-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Human Handwriting Jitter -->
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="font-semibold text-slate-300 flex items-center space-x-1.5">
+                            <i data-lucide="activity" class="w-4 h-4 text-slate-400"></i>
+                            <span>Human Handwriting Variation</span>
+                        </h4>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="checkJitter" class="sr-only peer" checked>
+                            <div class="w-9 h-5 bg-studio-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-bambu-500"></div>
+                        </label>
+                    </div>
+
+                    <div class="bg-studio-card p-3 rounded-lg border border-studio-border space-y-1.5">
+                        <label class="text-slate-400 flex justify-between">
+                            <span>Jitter Amplitude</span>
+                            <span id="valJitterIntensity" class="font-mono text-white font-medium">±0.15 mm</span>
+                        </label>
+                        <input type="range" id="inputJitterIntensity" min="0.05" max="0.50" step="0.05" value="0.15" class="w-full accent-bambu-500">
+                        <p class="text-[10px] text-slate-500">Simulates natural baseline tremor, slight character tilt, and stroke micro-wobble.</p>
+                    </div>
+                </div>
+
+                <!-- Page Sizing & Bed Alignment -->
+                <div class="space-y-3">
+                    <h4 class="font-semibold text-slate-300 flex items-center space-x-1.5">
+                        <i data-lucide="layout" class="w-4 h-4 text-slate-400"></i>
+                        <span>A4 Sheet Alignment (210 mm Width & 256 mm Bed Length)</span>
+                    </h4>
+
+                    <div class="p-3 bg-studio-card rounded-lg border border-studio-border text-[11px] text-slate-300 space-y-1.5">
+                        <div class="flex justify-between text-slate-400">
+                            <span>Standard A4 Width:</span>
+                            <span class="text-white font-mono font-semibold">210.0 mm</span>
+                        </div>
+                        <div class="flex justify-between text-slate-400">
+                            <span>Bambu A1 Usable Bed Length:</span>
+                            <span class="text-white font-mono font-semibold">256.0 mm (remainder blank)</span>
+                        </div>
+                        <div class="flex justify-between text-slate-400">
+                            <span>Bed Centering Blank Borders:</span>
+                            <span class="text-emerald-400 font-mono font-semibold">23.0 mm left & right</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-studio-card p-3 rounded-lg border border-studio-border space-y-1">
+                        <label class="text-slate-400 text-xs">Page Margins (inside A4 boundaries)</label>
+                        <select id="selectMargins" class="w-full bg-studio-panel border border-studio-border rounded p-1.5 text-slate-200 outline-none text-xs">
+                            <option value="15" selected>15 mm (Standard Margins)</option>
+                            <option value="20">20 mm (Generous Margins)</option>
+                            <option value="10">10 mm (Compact Margins)</option>
+                        </select>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- RIGHT PANE: Interactive 3D Slicer Toolpath Visualizer (55% Width) -->
+        <div class="flex-1 flex flex-col bg-studio-bg relative">
+            
+            <!-- 3D Canvas Viewport -->
+            <div id="canvasContainer" class="flex-1 relative w-full h-full overflow-hidden">
+                <canvas id="threeCanvas" class="w-full h-full block"></canvas>
+
+                <!-- Floating 3D Overlays & Viewport Controls -->
+                <div class="absolute top-3 left-3 flex items-center space-x-2 z-10">
+                    <div class="bg-studio-panel/90 backdrop-blur border border-studio-border rounded-lg p-1.5 flex space-x-1 text-xs">
+                        <button id="btnViewIso" class="px-2 py-1 rounded bg-studio-card hover:bg-studio-hover text-slate-200 font-medium transition" title="Isometric 3D View">3D Iso</button>
+                        <button id="btnViewTop" class="px-2 py-1 rounded hover:bg-studio-hover text-slate-400 hover:text-slate-200 font-medium transition" title="Top-Down Slicer 2D View">Top 2D</button>
+                        <button id="btnViewFront" class="px-2 py-1 rounded hover:bg-studio-hover text-slate-400 hover:text-slate-200 font-medium transition" title="Front Clearance View">Front</button>
+                        <button id="btnResetCamera" class="px-2 py-1 rounded hover:bg-studio-hover text-slate-400 hover:text-slate-200 transition" title="Reset View">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Layer Legend -->
+                    <div class="bg-studio-panel/90 backdrop-blur border border-studio-border rounded-lg px-2.5 py-1.5 flex items-center space-x-3 text-[11px]">
+                        <div class="flex items-center space-x-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shadow-sm shadow-blue-500/50"></span>
+                            <span class="text-slate-300">Draw (G1)</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <span class="w-2.5 h-2.5 rounded-full bg-red-400/80 inline-block"></span>
+                            <span class="text-slate-300">Travel (G0)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floating 3D Overlays: Top-Right Layer Toggles & Current Scale Badge (Unobtrusive) -->
+                <div class="absolute top-3 right-3 z-10 flex items-center space-x-2">
+                    <!-- Current Plot Scale Tag in 3D Viewport -->
+                    <div class="bg-studio-panel/90 backdrop-blur border border-studio-border rounded-lg px-2.5 py-1.5 flex items-center space-x-1.5 text-xs shadow-md">
+                        <i data-lucide="scaling" class="w-3.5 h-3.5 text-bambu-500"></i>
+                        <span class="text-[11px] text-slate-400">Scale:</span>
+                        <span id="badge3dScale" class="font-mono text-xs font-bold text-bambu-400">1.00x</span>
+                    </div>
+
+                    <!-- Layer Toggles -->
+                    <div class="bg-studio-panel/90 backdrop-blur border border-studio-border rounded-lg px-2.5 py-1.5 flex items-center space-x-3 text-xs shadow-md">
+                        <label class="flex items-center space-x-1.5 text-slate-300 cursor-pointer text-[11px]">
+                            <input type="checkbox" id="checkShowTravel" checked class="rounded accent-red-400">
+                            <span>Travel Moves</span>
+                        </label>
+                        <label class="flex items-center space-x-1.5 text-slate-300 cursor-pointer text-[11px]">
+                            <input type="checkbox" id="checkShowToolhead" checked class="rounded accent-bambu-500">
+                            <span>Toolhead</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Empty State Prompt -->
+                <div id="visualizerEmptyState" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center p-6 bg-studio-bg/60 backdrop-blur-sm z-0">
+                    <div class="w-16 h-16 rounded-2xl bg-studio-card border border-studio-border flex items-center justify-center text-slate-500 mb-4 shadow-xl">
+                        <i data-lucide="box" class="w-8 h-8 text-bambu-500"></i>
+                    </div>
+                    <h3 class="text-base font-semibold text-slate-200">Bambu Lab A1 Plotter Bed Ready</h3>
+                    <p class="text-xs text-slate-400 max-w-sm mt-1">
+                        Click <span class="text-bambu-500 font-semibold">Generate Toolpath</span> above or pick a sample assignment to simulate the pen paths in 3D.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Bottom Slicer Simulation Control Bar -->
+            <div class="h-28 border-t border-studio-border bg-studio-panel px-4 py-2 flex flex-col justify-between shrink-0 z-10">
+                
+                <!-- Telemetry & Statistics Chips (Anti-Collision Formatting) -->
+                <div class="flex items-center justify-between text-xs border-b border-studio-border/60 pb-1.5 gap-2 overflow-x-auto">
+                    <div class="flex items-center space-x-3.5 shrink-0">
+                        <div class="flex items-center space-x-1.5">
+                            <i data-lucide="clock" class="w-3.5 h-3.5 text-bambu-500"></i>
+                            <span class="text-slate-400">Est. Time:</span>
+                            <span id="statEstTime" class="font-mono font-semibold text-white">0s</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <i data-lucide="pen-tool" class="w-3.5 h-3.5 text-blue-400"></i>
+                            <span class="text-slate-400">Draw:</span>
+                            <span id="statDrawDist" class="font-mono font-semibold text-white">0 mm</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <i data-lucide="navigation" class="w-3.5 h-3.5 text-red-400"></i>
+                            <span class="text-slate-400">Travel:</span>
+                            <span id="statTravelDist" class="font-mono font-semibold text-white">0 mm</span>
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <i data-lucide="chevrons-up" class="w-3.5 h-3.5 text-amber-400"></i>
+                            <span class="text-slate-400">Lifts:</span>
+                            <span id="statPenLifts" class="font-mono font-semibold text-white">0</span>
+                        </div>
+                    </div>
+
+                    <div class="text-[11px] text-slate-400 font-mono shrink-0 pl-2.5 border-l border-studio-border">
+                        <span id="statMoveCount" class="text-slate-200 font-medium">0</span> moves &bull; <span id="statStrokeCount" class="text-slate-200 font-medium">0</span> strokes
+                    </div>
+                </div>
+
+                <!-- Slicer Progress Slider & Animation Controls -->
+                <div class="flex items-center space-x-3 pt-1">
+                    <!-- Play / Pause Button -->
+                    <button id="btnPlayPause" class="w-8 h-8 rounded-lg bg-bambu-500 hover:bg-bambu-600 active:bg-bambu-700 flex items-center justify-center text-white transition disabled:opacity-40" disabled>
+                        <i id="iconPlayPause" data-lucide="play" class="w-4 h-4 fill-current"></i>
+                    </button>
+
+                    <!-- Speed Multiplier Toggle -->
+                    <button id="btnSpeedMultiplier" class="px-2 py-1 bg-studio-card hover:bg-studio-hover border border-studio-border rounded text-xs font-mono font-semibold text-slate-300 transition">
+                        1x
+                    </button>
+
+                    <!-- Interactive Slicer Scrubbing Slider -->
+                    <div class="flex-1 flex flex-col space-y-1">
+                        <div class="flex justify-between text-[11px]">
+                            <span class="text-slate-400">Toolpath Progress</span>
+                            <span id="sliderPercentLabel" class="font-mono font-semibold text-bambu-500">100.0%</span>
+                        </div>
+                        <input type="range" id="sliderToolpath" min="0" max="1000" value="1000" class="w-full h-1.5 bg-studio-card rounded-lg appearance-none cursor-pointer accent-bambu-500" disabled>
+                    </div>
+
+                    <!-- Step Move Buttons -->
+                    <div class="flex items-center space-x-1">
+                        <button id="btnStepBack" class="p-1.5 rounded bg-studio-card hover:bg-studio-hover border border-studio-border text-slate-300 transition" title="Step Back 10 Moves">
+                            <i data-lucide="skip-back" class="w-3.5 h-3.5"></i>
+                        </button>
+                        <button id="btnStepForward" class="p-1.5 rounded bg-studio-card hover:bg-studio-hover border border-studio-border text-slate-300 transition" title="Step Forward 10 Moves">
+                            <i data-lucide="skip-forward" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- G-CODE INSPECTOR MODAL / DRAWER -->
+    <div id="gcodeModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-6 hidden">
+        <div class="bg-studio-panel border border-studio-border rounded-xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+            <!-- Modal Header -->
+            <div class="h-12 border-b border-studio-border px-4 flex items-center justify-between bg-studio-card">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="file-text" class="w-4 h-4 text-bambu-500"></i>
+                    <span class="font-semibold text-sm text-slate-200">Generated Bambu Lab A1 G-Code</span>
+                    <span id="modalLineCount" class="text-xs text-slate-400 font-mono">(0 lines)</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button id="btnCopyGcode" class="px-2.5 py-1 bg-studio-hover hover:bg-studio-border rounded text-xs text-slate-200 flex items-center space-x-1.5 transition">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        <span>Copy</span>
+                    </button>
+                    <button id="btnDownloadGcodeModal" class="px-2.5 py-1 bg-bambu-500 hover:bg-bambu-600 rounded text-xs text-white font-medium flex items-center space-x-1.5 transition">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>Download .gcode</span>
+                    </button>
+                    <button id="btnCloseModal" class="p-1 rounded hover:bg-studio-border text-slate-400 hover:text-white transition">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Modal Body -->
+            <div class="flex-1 p-3 overflow-hidden bg-studio-bg font-mono text-xs">
+                <textarea id="modalGcodeText" readonly class="w-full h-full p-3 bg-transparent text-slate-300 resize-none outline-none leading-relaxed select-text"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script src="/js/app.js?v=2"></script>
+</body>
+</html>
