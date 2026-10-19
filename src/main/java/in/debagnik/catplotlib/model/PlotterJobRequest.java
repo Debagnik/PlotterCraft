@@ -67,6 +67,13 @@ public class PlotterJobRequest {
     @Builder.Default
     private String fontStyle = "SIMPLEX"; // SIMPLEX, COMPLEX, DUPLEX
 
+    // Axis Flipping / Bed Orientation (Default: flip Y so SVG top-down matches Cartesian bed)
+    @Builder.Default
+    private Boolean flipY = true;
+
+    @Builder.Default
+    private Boolean flipX = false;
+
     public double getFeedrateDraw() { return feedrateDraw != null ? feedrateDraw : 1400.0; }
     public double getFeedrateTravel() { return feedrateTravel != null ? feedrateTravel : 3500.0; }
     public double getZUp() { return zUp != null ? zUp : 3.0; }
@@ -81,4 +88,6 @@ public class PlotterJobRequest {
     public double getMarginRight() { return marginRight != null ? marginRight : 15.0; }
     public double getFontScale() { return fontScale != null ? fontScale : 1.0; }
     public double getLineSpacing() { return lineSpacing != null ? lineSpacing : 1.4; }
+    public boolean isFlipY() { return flipY != null ? flipY : true; }
+    public boolean isFlipX() { return flipX != null ? flipX : false; }
 }

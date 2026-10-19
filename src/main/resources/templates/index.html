@@ -100,9 +100,9 @@
                 <span>View G-code</span>
             </button>
             
-            <button id="btnDownloadGcode" class="px-3.5 py-1.5 rounded-lg border border-studio-border bg-studio-card hover:bg-studio-hover text-xs font-medium text-slate-200 flex items-center space-x-1.5 transition" disabled>
-                <i data-lucide="download" class="w-4 h-4"></i>
-                <span>Export .gcode</span>
+            <button id="btnDownloadGcode" class="px-3.5 py-1.5 rounded-lg border border-emerald-500/40 bg-emerald-950/30 hover:bg-emerald-900/40 text-xs font-medium text-emerald-300 flex items-center space-x-1.5 transition shadow-sm" disabled title="Export Bambu Lab A1 .gcode file (Save to MicroSD card for direct printing)">
+                <i data-lucide="download" class="w-4 h-4 text-emerald-400"></i>
+                <span>Export SD .gcode</span>
             </button>
 
             <button id="btnGenerateGcode" class="px-4 py-2 rounded-lg bg-bambu-500 hover:bg-bambu-600 active:bg-bambu-700 text-white text-xs font-semibold flex items-center space-x-2 shadow-lg shadow-bambu-500/20 transition disabled:opacity-50">
@@ -378,6 +378,38 @@
                             <option value="20">20 mm (Generous Margins)</option>
                             <option value="10">10 mm (Compact Margins)</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- Bed Orientation & Coordinate System -->
+                <div class="space-y-3">
+                    <h4 class="font-semibold text-slate-300 flex items-center space-x-1.5">
+                        <i data-lucide="flip-vertical" class="w-4 h-4 text-slate-400"></i>
+                        <span>Bed Orientation & Coordinate System</span>
+                    </h4>
+
+                    <div class="bg-studio-card p-3 rounded-lg border border-studio-border space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-xs text-slate-200 font-medium">Flip Y-Axis (Cartesian Bed Alignment)</span>
+                                <p class="text-[10px] text-slate-400">Maps SVG top-down coordinates to printer Cartesian coordinates so print is not mirrored.</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                <input type="checkbox" id="checkFlipY" class="sr-only peer" checked>
+                                <div class="w-9 h-5 bg-studio-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-bambu-500"></div>
+                            </label>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-2 border-t border-studio-border/50">
+                            <div>
+                                <span class="text-xs text-slate-200 font-medium">Mirror X-Axis</span>
+                                <p class="text-[10px] text-slate-400">Flips horizontal coordinates (left/right swap) if custom mirror is required.</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer shrink-0">
+                                <input type="checkbox" id="checkFlipX" class="sr-only peer">
+                                <div class="w-9 h-5 bg-studio-border peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-bambu-500"></div>
+                            </label>
+                        </div>
                     </div>
                 </div>
 

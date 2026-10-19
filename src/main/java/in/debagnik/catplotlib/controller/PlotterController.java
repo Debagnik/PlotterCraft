@@ -56,6 +56,8 @@ public class PlotterController {
             @Parameter(description = "Pen Down drawing surface Z in mm") @RequestParam(value = "zDown", defaultValue = "0.0") double zDown,
             @Parameter(description = "Enable natural handwriting jitter") @RequestParam(value = "jitterEnabled", defaultValue = "true") boolean jitterEnabled,
             @Parameter(description = "Jitter intensity factor") @RequestParam(value = "jitterIntensity", defaultValue = "0.15") double jitterIntensity,
+            @Parameter(description = "Invert Y axis for Cartesian bed") @RequestParam(value = "flipY", defaultValue = "true") boolean flipY,
+            @Parameter(description = "Mirror X axis") @RequestParam(value = "flipX", defaultValue = "false") boolean flipX,
             @Parameter(description = "Attached SVG diagram files") @RequestParam(value = "svgFiles", required = false) MultipartFile[] svgFiles) {
 
         Map<String, String> svgMap = new HashMap<>();
@@ -81,6 +83,8 @@ public class PlotterController {
                 .zDown(zDown)
                 .jitterEnabled(jitterEnabled)
                 .jitterIntensity(jitterIntensity)
+                .flipY(flipY)
+                .flipX(flipX)
                 .pageWidth(256.0)
                 .pageHeight(256.0)
                 .build();

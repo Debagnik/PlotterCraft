@@ -210,7 +210,7 @@ class CatPlotLibTests {
 				"<svg><circle cx='20' cy='20' r='10'/></svg>".getBytes(StandardCharsets.UTF_8)
 		);
 		plotterController.generateGcodeMultipart(
-				"# Test Multipart", 1400.0, 3500.0, 3.0, 0.0, true, 0.15,
+				"# Test Multipart", 1400.0, 3500.0, 3.0, 0.0, true, 0.15, true, false,
 				new MockMultipartFile[]{svgFile}
 		);
 	}
@@ -260,5 +260,32 @@ class CatPlotLibTests {
 		assertThat(response.getMoves()).isNotEmpty();
 		assertThat(response.getGcode()).contains("G0");
 		assertThat(response.getGcode()).contains("G1");
+	}
+
+	@Test
+	@DisplayName("Generates flipped Cartesian G-code for assignment_plotter.gcode")
+	void testGenerateFlippedAssignmentGcode() throws Exception {
+		Map<String, Object> samples = pipelineService.getSampleAssignments();
+		@SuppressWarnings("unchecked")
+		Map<String, Object> physics = (Map<String, Object>) samples.get("physics");
+		String md = (String) physics.get("markdown");
+		@SuppressWarnings("unchecked")
+		Map<String, String> svgs = (Map<String, String>) physics.get("svgFiles");
+
+		PlotterJobRequest request = PlotterJobRequest.builder()
+				.markdown(md)
+				.svgFiles(svgs)
+				.feedrateDraw(1400.0)
+				.feedrateTravel(3500.0)
+				.zUp(3.0)
+				.zDown(0.0)
+				.flipY(true)
+				.flipX(false)
+				.build();
+
+		PlotterJobResponse response = pipelineService.processJob(request);
+		assertThat(response.isSuccess()).isTrue();
+		assertThat(response.getGcode()).isNotEmpty();
+		java.nio.file.Files.writeString(java.nio.file.Path.of("assignment_plotter.gcode"), response.getGcode());
 	}
 }

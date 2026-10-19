@@ -166,7 +166,7 @@ class PlotterControllerTest {
         // Call controller method directly for mock multipart file throwing checked IOException
         PlotterController controller = new PlotterController(pipelineService);
         controller.generateGcodeMultipart(
-                "# Test", 1400.0, 3500.0, 3.0, 0.0, true, 0.15,
+                "# Test", 1400.0, 3500.0, 3.0, 0.0, true, 0.15, true, false,
                 new org.springframework.web.multipart.MultipartFile[]{faultyFile}
         );
 
@@ -180,5 +180,23 @@ class PlotterControllerTest {
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"already_has_ext.gcode\""));
+    }
+
+    @Test
+    @DisplayName("POST /api/generate-gcode-multipart passes flipY and flipX options correctly")
+    void testMultipartWithFlipOptions() throws Exception {
+        PlotterJobResponse mockResponse = PlotterJobResponse.builder().success(true).build();
+        when(pipelineService.processJob(any())).thenReturn(mockResponse);
+
+        MockMultipartFile file = new MockMultipartFile("svgFiles", "diagram.svg", "image/svg+xml",
+                "<svg><circle cx='10' cy='10' r='5'/></svg>".getBytes(StandardCharsets.UTF_8));
+
+        mockMvc.perform(multipart("/api/generate-gcode-multipart")
+                        .file(file)
+                        .param("markdown", "# Flipping Test")
+                        .param("flipY", "true")
+                        .param("flipX", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
     }
 }

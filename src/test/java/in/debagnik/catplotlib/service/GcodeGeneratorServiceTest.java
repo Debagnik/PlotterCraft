@@ -47,6 +47,14 @@ class GcodeGeneratorServiceTest {
         // Verify Safe Homing
         assertThat(gcode).contains("G28 ; Safe home all axes");
         assertThat(gcode).contains("G0 Z10.0 F1200 ; Immediately raise Z to safe 10mm clearance");
+
+        // Verify Bambu Studio Metadata Blocks
+        assertThat(gcode).contains("; HEADER_BLOCK_START");
+        assertThat(gcode).contains("; printer_model = Bambu Lab A1");
+        assertThat(gcode).contains("; HEADER_BLOCK_END");
+        assertThat(gcode).contains("; LAYER_CHANGE");
+        assertThat(gcode).contains("; CONFIG_BLOCK_START");
+        assertThat(gcode).contains("; CONFIG_BLOCK_END");
     }
 
     @Test
@@ -80,15 +88,15 @@ class GcodeGeneratorServiceTest {
 
         String gcode = result.gcode;
 
-        // Verify travel move
+        // Verify travel move (with default flipY=true: 256.0 - 10.0 = 246.000)
         assertThat(gcode).contains("G0 Z4.00 F1200 ; Pen Up");
-        assertThat(gcode).contains("G0 X10.000 Y10.000 F3000");
+        assertThat(gcode).contains("G0 X10.000 Y246.000 F3000");
 
         // Verify pen drop
         assertThat(gcode).contains("G1 Z0.20 F1000 ; Pen Down");
 
         // Verify drawing move
-        assertThat(gcode).contains("G1 X20.000 Y10.000 F1200");
+        assertThat(gcode).contains("G1 X20.000 Y246.000 F1200");
 
         // Verify pen lift at end
         assertThat(gcode).contains("G0 Z4.00 F1200 ; Pen Lift");
@@ -106,6 +114,26 @@ class GcodeGeneratorServiceTest {
         assertThat(result.statistics.getTotalDrawDistanceMm()).isEqualTo(10.0, offset(0.1));
         assertThat(result.statistics.getPenLiftsCount()).isEqualTo(1);
         assertThat(result.statistics.getStrokeCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Axis flipping options (flipX and flipY=false) are respected")
+    void testAxisFlippingOptions() {
+        VectorStroke stroke = new VectorStroke();
+        stroke.addPoint(10.0, 15.0);
+        stroke.addPoint(50.0, 15.0);
+
+        // With flipY = false and flipX = true (bed 256x256)
+        // startPt: X = 256 - 10 = 246.0, Y = 15.0
+        // nextPt:  X = 256 - 50 = 206.0, Y = 15.0
+        PlotterJobRequest request = PlotterJobRequest.builder()
+                .flipY(false)
+                .flipX(true)
+                .build();
+
+        GcodeGeneratorService.GcodeGenerationResult result = gcodeService.generateGcode(List.of(stroke), request);
+        assertThat(result.gcode).contains("G0 X246.000 Y15.000");
+        assertThat(result.gcode).contains("G1 X206.000 Y15.000");
     }
 
     @Test

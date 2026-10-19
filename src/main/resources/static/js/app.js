@@ -207,13 +207,13 @@ function renderToolpaths(moves) {
         const from = m.from;
         const to = m.to;
 
-        // In 3D space: X=from.x, Y=(256 - from.y) to convert screen/SVG top-left Y to 3D Cartesian Y
+        // Coordinates from backend already match printer Cartesian G-code coordinates
         const p1x = from.x;
-        const p1y = 256.0 - from.y;
+        const p1y = from.y;
         const p1z = from.z + 0.2; // Slight offset above paper surface
 
         const p2x = to.x;
-        const p2y = 256.0 - to.y;
+        const p2y = to.y;
         const p2z = to.z + 0.2;
 
         if (m.type === 'DRAW') {
@@ -259,7 +259,7 @@ function renderToolpaths(moves) {
 
     // Set initial toolhead position at end
     const lastMove = moves[moves.length - 1];
-    updateToolheadPosition(lastMove.to.x, 256.0 - lastMove.to.y, lastMove.to.z + 0.2);
+    updateToolheadPosition(lastMove.to.x, lastMove.to.y, lastMove.to.z + 0.2);
     toolheadGroup.visible = state.viewOptions.showToolhead;
 
     setScrubberProgress(1.0);
@@ -295,10 +295,10 @@ function setScrubberProgress(progress) {
     // Position toolhead at current move's 'to' point
     if (visibleMoveCount > 0 && visibleMoveCount <= totalMoves) {
         const activeMove = state.moves[visibleMoveCount - 1];
-        updateToolheadPosition(activeMove.to.x, 256.0 - activeMove.to.y, activeMove.to.z + 0.2);
+        updateToolheadPosition(activeMove.to.x, activeMove.to.y, activeMove.to.z + 0.2);
     } else if (visibleMoveCount === 0 && totalMoves > 0) {
         const firstMove = state.moves[0];
-        updateToolheadPosition(firstMove.from.x, 256.0 - firstMove.from.y, firstMove.from.z + 0.2);
+        updateToolheadPosition(firstMove.from.x, firstMove.from.y, firstMove.from.z + 0.2);
     }
 
     // Update UI Slider
@@ -443,7 +443,9 @@ async function handleGenerateGcode() {
         marginLeft: parseFloat(document.getElementById('selectMargins').value),
         marginRight: parseFloat(document.getElementById('selectMargins').value),
         marginTop: parseFloat(document.getElementById('selectMargins').value),
-        marginBottom: parseFloat(document.getElementById('selectMargins').value)
+        marginBottom: parseFloat(document.getElementById('selectMargins').value),
+        flipY: document.getElementById('checkFlipY') ? document.getElementById('checkFlipY').checked : true,
+        flipX: document.getElementById('checkFlipX') ? document.getElementById('checkFlipX').checked : false
     };
 
     try {

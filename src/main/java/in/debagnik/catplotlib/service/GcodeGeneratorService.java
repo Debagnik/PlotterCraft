@@ -31,7 +31,7 @@ public class GcodeGeneratorService {
     }
 
     public GcodeGenerationResult generateGcode(List<VectorStroke> strokes, PlotterJobRequest request) {
-        StringBuilder gcode = new StringBuilder();
+        StringBuilder bodyGcode = new StringBuilder();
         List<ToolpathMove> moves = new ArrayList<>();
 
         double zUp = request.getZUp();
@@ -41,6 +41,11 @@ public class GcodeGeneratorService {
         double zLiftFeedrate = 1200.0;
         double zDropFeedrate = 1000.0;
 
+        boolean flipY = request.isFlipY();
+        boolean flipX = request.isFlipX();
+        double pageHeight = request.getPageHeight();
+        double pageWidth = request.getPageWidth();
+
         // Statistics accumulators
         double totalDrawDistance = 0.0;
         double totalTravelDistance = 0.0;
@@ -48,27 +53,26 @@ public class GcodeGeneratorService {
         int penLiftsCount = 0;
         int moveIndex = 0;
 
-        // Current toolhead position tracker
+        // Current toolhead position tracker (starts homed at 0, 0, 10mm)
         double curX = 0.0;
         double curY = 0.0;
-        double curZ = 10.0; // Starts homed and lifted to 10mm
+        double curZ = 10.0;
 
-        // 1. Safety Header & Zero-Heat Configuration
-        appendSafetyHeader(gcode, request, strokes.size());
-
-        // 2. Iterate through each vector stroke
+        // Iterate through each vector stroke
         for (int strokeIdx = 0; strokeIdx < strokes.size(); strokeIdx++) {
             VectorStroke stroke = strokes.get(strokeIdx);
             List<Point2D> pts = stroke.getPoints();
             if (pts == null || pts.size() < 2) continue;
 
             Point2D startPt = pts.get(0);
+            double sx = flipX ? (pageWidth - startPt.getX()) : startPt.getX();
+            double sy = flipY ? (pageHeight - startPt.getY()) : startPt.getY();
 
             // A. Aerial Travel Move to Stroke Start Point (G0 with pen up)
-            if (curX != startPt.getX() || curY != startPt.getY() || curZ != zUp) {
+            if (curX != sx || curY != sy || curZ != zUp) {
                 // Ensure pen is up
                 if (curZ != zUp) {
-                    gcode.append(String.format(Locale.US, "G0 Z%.2f F%.0f ; Pen Up\n", zUp, zLiftFeedrate));
+                    bodyGcode.append(String.format(Locale.US, "G0 Z%.2f F%.0f ; Pen Up\n", zUp, zLiftFeedrate));
                     double zDist = Math.abs(zUp - curZ);
                     totalTravelDistance += zDist;
                     totalTimeSeconds += (zDist / zLiftFeedrate) * 60.0;
@@ -76,13 +80,13 @@ public class GcodeGeneratorService {
                 }
 
                 // Rapid travel in XY
-                double travelDist = Math.hypot(startPt.getX() - curX, startPt.getY() - curY);
+                double travelDist = Math.hypot(sx - curX, sy - curY);
                 double travelDuration = (travelDist / feedrateTravel) * 60.0;
                 totalTravelDistance += travelDist;
                 totalTimeSeconds += travelDuration;
 
                 ToolpathPoint fromPt = new ToolpathPoint(curX, curY, zUp, "TRAVEL", false, strokeIdx);
-                ToolpathPoint toPt = new ToolpathPoint(startPt.getX(), startPt.getY(), zUp, "TRAVEL", false, strokeIdx);
+                ToolpathPoint toPt = new ToolpathPoint(sx, sy, zUp, "TRAVEL", false, strokeIdx);
 
                 moves.add(ToolpathMove.builder()
                         .from(fromPt)
@@ -95,13 +99,13 @@ public class GcodeGeneratorService {
                         .strokeIndex(strokeIdx)
                         .build());
 
-                gcode.append(String.format(Locale.US, "G0 X%.3f Y%.3f F%.0f\n", startPt.getX(), startPt.getY(), feedrateTravel));
-                curX = startPt.getX();
-                curY = startPt.getY();
+                bodyGcode.append(String.format(Locale.US, "G0 X%.3f Y%.3f F%.0f\n", sx, sy, feedrateTravel));
+                curX = sx;
+                curY = sy;
             }
 
             // B. Lower Pen (Pen Down)
-            gcode.append(String.format(Locale.US, "G1 Z%.2f F%.0f ; Pen Down\n", zDown, zDropFeedrate));
+            bodyGcode.append(String.format(Locale.US, "G1 Z%.2f F%.0f ; Pen Down\n", zDown, zDropFeedrate));
             double zDropDist = Math.abs(curZ - zDown);
             totalTravelDistance += zDropDist;
             totalTimeSeconds += (zDropDist / zDropFeedrate) * 60.0;
@@ -110,7 +114,9 @@ public class GcodeGeneratorService {
             // C. Drawing Moves (G1 along stroke points)
             for (int i = 1; i < pts.size(); i++) {
                 Point2D nextPt = pts.get(i);
-                double drawDist = Math.hypot(nextPt.getX() - curX, nextPt.getY() - curY);
+                double nx = flipX ? (pageWidth - nextPt.getX()) : nextPt.getX();
+                double ny = flipY ? (pageHeight - nextPt.getY()) : nextPt.getY();
+                double drawDist = Math.hypot(nx - curX, ny - curY);
                 if (drawDist < 0.001) continue; // Skip identical duplicate points
 
                 double drawDuration = (drawDist / feedrateDraw) * 60.0;
@@ -118,7 +124,7 @@ public class GcodeGeneratorService {
                 totalTimeSeconds += drawDuration;
 
                 ToolpathPoint fromPt = new ToolpathPoint(curX, curY, zDown, "DRAW", true, strokeIdx);
-                ToolpathPoint toPt = new ToolpathPoint(nextPt.getX(), nextPt.getY(), zDown, "DRAW", true, strokeIdx);
+                ToolpathPoint toPt = new ToolpathPoint(nx, ny, zDown, "DRAW", true, strokeIdx);
 
                 moves.add(ToolpathMove.builder()
                         .from(fromPt)
@@ -131,13 +137,13 @@ public class GcodeGeneratorService {
                         .strokeIndex(strokeIdx)
                         .build());
 
-                gcode.append(String.format(Locale.US, "G1 X%.3f Y%.3f F%.0f\n", nextPt.getX(), nextPt.getY(), feedrateDraw));
-                curX = nextPt.getX();
-                curY = nextPt.getY();
+                bodyGcode.append(String.format(Locale.US, "G1 X%.3f Y%.3f F%.0f\n", nx, ny, feedrateDraw));
+                curX = nx;
+                curY = ny;
             }
 
             // D. Lift Pen at end of stroke
-            gcode.append(String.format(Locale.US, "G0 Z%.2f F%.0f ; Pen Lift\n", zUp, zLiftFeedrate));
+            bodyGcode.append(String.format(Locale.US, "G0 Z%.2f F%.0f ; Pen Lift\n", zUp, zLiftFeedrate));
             double zLiftDist = Math.abs(zUp - curZ);
             totalTravelDistance += zLiftDist;
             totalTimeSeconds += (zLiftDist / zLiftFeedrate) * 60.0;
@@ -145,12 +151,18 @@ public class GcodeGeneratorService {
             penLiftsCount++;
         }
 
-        // 3. Safe End Routine
-        appendSafetyEndRoutine(gcode);
+        // Safe End Routine
+        appendSafetyEndRoutine(bodyGcode);
 
-        // Calculate line count and formatted time
-        int gcodeLinesCount = gcode.toString().split("\n").length;
         String formattedTime = formatDuration(totalTimeSeconds);
+
+        // Prepend official Bambu Studio header with accurate metadata
+        StringBuilder gcode = new StringBuilder();
+        appendSafetyHeader(gcode, request, strokes.size(), formattedTime);
+        gcode.append(bodyGcode);
+
+        // Calculate line count
+        int gcodeLinesCount = gcode.toString().split("\n").length;
 
         PlotterStatistics stats = PlotterStatistics.builder()
                 .totalDrawDistanceMm(round(totalDrawDistance, 1))
@@ -167,8 +179,18 @@ public class GcodeGeneratorService {
         return new GcodeGenerationResult(gcode.toString(), moves, stats);
     }
 
-    private void appendSafetyHeader(StringBuilder gcode, PlotterJobRequest req, int strokeCount) {
+    private void appendSafetyHeader(StringBuilder gcode, PlotterJobRequest req, int strokeCount, String formattedTime) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        gcode.append("; HEADER_BLOCK_START\n");
+        gcode.append("; printer_model = Bambu Lab A1\n");
+        gcode.append("; generated by BambuStudio 01.09.05.51\n");
+        gcode.append("; date: ").append(timestamp).append("\n");
+        gcode.append("; total_layers = 1\n");
+        gcode.append("; total_filament_used = 0.00g\n");
+        gcode.append("; estimated_time = ").append(formattedTime).append("\n");
+        gcode.append("; max_z_height = 25.00\n");
+        gcode.append("; HEADER_BLOCK_END\n\n");
+
         gcode.append("; ==========================================================================\n");
         gcode.append("; CatPlotLib - Bambu Lab A1 Safe Plotter G-code\n");
         gcode.append("; Generated on: ").append(timestamp).append("\n");
@@ -195,6 +217,10 @@ public class GcodeGeneratorService {
         gcode.append("G0 Z10.0 F1200 ; Immediately raise Z to safe 10mm clearance\n\n");
 
         gcode.append("; --- BEGIN PLOT PATHS ---\n");
+        gcode.append("; LAYER_CHANGE\n");
+        gcode.append("; Z: 0.00\n");
+        gcode.append("; HEIGHT: 0.20\n");
+        gcode.append("; BEFORE_LAYER_CHANGE\n\n");
     }
 
     private void appendSafetyEndRoutine(StringBuilder gcode) {
@@ -203,7 +229,13 @@ public class GcodeGeneratorService {
         gcode.append("G0 X10.0 Y240.0 F3000 ; Present bed forward for easy paper removal\n");
         gcode.append("M400 ; Wait for all moves to complete\n");
         gcode.append("M84 ; Disable all stepper motors\n");
-        gcode.append("; CatPlotLib job completed safely.\n");
+        gcode.append("; CatPlotLib job completed safely.\n\n");
+
+        gcode.append("; CONFIG_BLOCK_START\n");
+        gcode.append("; printer_model = Bambu Lab A1\n");
+        gcode.append("; nozzle_diameter = 0.4\n");
+        gcode.append("; bed_type = Textured PEI Plate\n");
+        gcode.append("; CONFIG_BLOCK_END\n");
     }
 
     private String formatDuration(double seconds) {
