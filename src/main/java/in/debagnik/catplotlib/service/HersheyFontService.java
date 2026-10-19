@@ -1,7 +1,7 @@
-package in.debagnik.plottercraft.service;
+package in.debagnik.catplotlib.service;
 
-import in.debagnik.plottercraft.model.Point2D;
-import in.debagnik.plottercraft.model.VectorStroke;
+import in.debagnik.catplotlib.model.Point2D;
+import in.debagnik.catplotlib.model.VectorStroke;
 import org.springframework.stereotype.Service;
 
 import java.text.Normalizer;

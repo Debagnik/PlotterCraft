@@ -1,13 +1,14 @@
-package in.debagnik.plottercraft;
+package in.debagnik.catplotlib;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class PlotterCraft {
+public class CatPlotLib {
 
 	public static void main(String[] args) {
-		SpringApplication.run(PlotterCraft.class, args);
+		SpringApplication.run(CatPlotLib.class, args);
 	}
 
 }
+

@@ -1,4 +1,4 @@
-package in.debagnik.plottercraft.model;
+package in.debagnik.catplotlib.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

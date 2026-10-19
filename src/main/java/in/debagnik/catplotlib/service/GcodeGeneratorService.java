@@ -1,6 +1,6 @@
-package in.debagnik.plottercraft.service;
+package in.debagnik.catplotlib.service;
 
-import in.debagnik.plottercraft.model.*;
+import in.debagnik.catplotlib.model.*;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -170,7 +170,7 @@ public class GcodeGeneratorService {
     private void appendSafetyHeader(StringBuilder gcode, PlotterJobRequest req, int strokeCount) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         gcode.append("; ==========================================================================\n");
-        gcode.append("; PlotterCraft - Bambu Lab A1 Safe Plotter G-code\n");
+        gcode.append("; CatPlotLib - Bambu Lab A1 Safe Plotter G-code\n");
         gcode.append("; Generated on: ").append(timestamp).append("\n");
         gcode.append("; Target Machine: Bambu Lab A1 (256x256 mm Bed)\n");
         gcode.append("; Total Strokes: ").append(strokeCount).append("\n");
@@ -203,7 +203,7 @@ public class GcodeGeneratorService {
         gcode.append("G0 X10.0 Y240.0 F3000 ; Present bed forward for easy paper removal\n");
         gcode.append("M400 ; Wait for all moves to complete\n");
         gcode.append("M84 ; Disable all stepper motors\n");
-        gcode.append("; PlotterCraft job completed safely.\n");
+        gcode.append("; CatPlotLib job completed safely.\n");
     }
 
     private String formatDuration(double seconds) {

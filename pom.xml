@@ -9,10 +9,10 @@
         <version>3.4.2</version>
         <relativePath/>
     </parent>
-    <groupId>in.debagnik.plottercraft</groupId>
-    <artifactId>plottercraft</artifactId>
+    <groupId>in.debagnik.catplotlib</groupId>
+    <artifactId>catplotlib</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>PlotterCraft</name>
+    <name>CatPlotLib</name>
     <description>Markdown &amp; Stylus SVG to Bambu Lab A1 Safe Plotter G-Code</description>
 
     <properties>
@@ -29,6 +29,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
+        <!-- OpenAPI 3 & Swagger UI -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>3.1.1</version>
         </dependency>
 
         <!-- Markdown Parser (CommonMark Java) -->

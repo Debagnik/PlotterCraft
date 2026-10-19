@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PlotterCraft - Bambu Lab A1 Plotter Studio</title>
+    <title>CatPlotLib - Bambu Lab A1 Plotter Studio</title>
     <meta name="description" content="Convert Markdown assignments with embedded stylus SVG diagrams into safe Bambu Lab A1 plotter G-code with interactive 3D slicer toolpath preview.">
     
     <!-- Google Fonts: Inter & JetBrains Mono -->
@@ -63,7 +63,7 @@
             </div>
             <div>
                 <div class="flex items-center space-x-2">
-                    <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">PlotterCraft</span>
+                    <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">CatPlotLib</span>
                     <span class="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-bambu-500/20 text-bambu-500 border border-bambu-500/30">Bambu A1 Safe</span>
                 </div>
                 <div class="text-[11px] text-slate-400">Markdown & Stylus SVG to Safe Plotter G-Code</div>
@@ -82,6 +82,11 @@
 
         <!-- Action Buttons: Generate & Download -->
         <div class="flex items-center space-x-2.5">
+            <a href="/swagger-ui.html" target="_blank" class="px-3 py-1.5 rounded-lg border border-studio-border bg-studio-card hover:bg-studio-hover text-xs font-medium text-slate-300 hover:text-white flex items-center space-x-1.5 transition" title="Open Swagger UI API Reference">
+                <i data-lucide="book-open" class="w-4 h-4 text-emerald-400"></i>
+                <span>API Docs</span>
+            </a>
+
             <button id="btnToggleGcodeModal" class="px-3.5 py-1.5 rounded-lg border border-studio-border bg-studio-card hover:bg-studio-hover text-xs font-medium text-slate-200 flex items-center space-x-1.5 transition">
                 <i data-lucide="code" class="w-4 h-4"></i>
                 <span>View G-code</span>

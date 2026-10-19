@@ -1,9 +1,9 @@
-package in.debagnik.plottercraft.service;
+package in.debagnik.catplotlib.service;
 
-import in.debagnik.plottercraft.model.BoundingBox;
-import in.debagnik.plottercraft.model.PlotterJobRequest;
-import in.debagnik.plottercraft.model.Point2D;
-import in.debagnik.plottercraft.model.VectorStroke;
+import in.debagnik.catplotlib.model.BoundingBox;
+import in.debagnik.catplotlib.model.PlotterJobRequest;
+import in.debagnik.catplotlib.model.Point2D;
+import in.debagnik.catplotlib.model.VectorStroke;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.commonmark.ext.autolink.AutolinkExtension;

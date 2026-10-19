@@ -1,13 +1,14 @@
-package in.debagnik.plottercraft;
+package in.debagnik.catplotlib;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class PlotterCraftTests {
+class CatPlotLibTests {
 
 	@Test
 	void contextLoads() {
 	}
 
 }
+

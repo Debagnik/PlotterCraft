@@ -1,5 +1,5 @@
 /**
- * PlotterCraft - Main Frontend Controller & Three.js Slicer Visualizer
+ * CatPlotLib - Main Frontend Controller & Three.js Slicer Visualizer
  */
 
 // Global State
@@ -493,7 +493,7 @@ function handleDownloadGcode() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'plottercraft_assignment.gcode';
+    a.download = 'catplotlib_assignment.gcode';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

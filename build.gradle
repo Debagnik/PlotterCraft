@@ -4,7 +4,7 @@ plugins {
 	id 'io.spring.dependency-management' version '1.1.7'
 }
 
-group = 'in.debagnik.plottercraft'
+group = 'in.debagnik.catplotlib'
 version = '0.0.1-SNAPSHOT'
 
 java {
@@ -20,6 +20,9 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	
+	// OpenAPI & Swagger UI
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
 	
 	// Markdown parsing
 	implementation 'org.commonmark:commonmark:0.24.0'

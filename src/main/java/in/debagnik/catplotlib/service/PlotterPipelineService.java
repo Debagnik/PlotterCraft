@@ -1,8 +1,8 @@
-package in.debagnik.plottercraft.service;
+package in.debagnik.catplotlib.service;
 
-import in.debagnik.plottercraft.model.*;
-import in.debagnik.plottercraft.service.GcodeGeneratorService.GcodeGenerationResult;
-import in.debagnik.plottercraft.service.MarkdownParserService.LayoutResult;
+import in.debagnik.catplotlib.model.*;
+import in.debagnik.catplotlib.service.GcodeGeneratorService.GcodeGenerationResult;
+import in.debagnik.catplotlib.service.MarkdownParserService.LayoutResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
