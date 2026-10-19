@@ -66,7 +66,7 @@ public class PlotterPipelineService {
         // Sample 1: Physics Assignment with RLC Circuit Diagram
         String physicsMarkdown = """
 # Physics 201: RLC Resonant Circuits
-**Name:** Alex Morgan  |  **Date:** October 19, 2026
+**Name:** Rak Kingabed  |  **Date:** 29th, Feb 2000
 
 ## 1. Theoretical Background
 An RLC circuit is an electrical circuit consisting of a resistor ($R$), an inductor ($L$), and a capacitor ($C$), connected in series or in parallel.

@@ -279,4 +279,25 @@ class MarkdownParserServiceTest {
         assertThat(result.strokes).isNotEmpty();
         assertThat(result.bounds.isValid()).isTrue();
     }
+
+    @Test
+    @DisplayName("Multilingual markdown with Hiragana, Devanagari, and Kanji renders without errors and wraps cleanly")
+    void testMultilingualMarkdownRendering() {
+        String md = """
+                # 多言語プロッター (Multilingual Plotter)
+                
+                ## Japanese Section (日本語)
+                こんにちは世界！これはペンプロッターのテストです。
+                
+                ## Devanagari Section (देवनागरी)
+                नमस्ते दुनिया! यह प्लॉटरक्राफ्ट का परीक्षण है।
+                """;
+        PlotterJobRequest req = PlotterJobRequest.builder().markdown(md).build();
+        MarkdownParserService.LayoutResult result = markdownParserService.layoutDocument(req);
+
+        assertThat(result.strokes).isNotEmpty();
+        assertThat(result.bounds.isValid()).isTrue();
+        // Ensure strokes fit within bounds
+        assertThat(result.bounds.getMaxX()).isLessThanOrEqualTo(256.0);
+    }
 }

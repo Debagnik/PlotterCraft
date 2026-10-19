@@ -236,4 +236,29 @@ class CatPlotLibTests {
 
 		assertThat(new CatPlotLib()).isNotNull();
 	}
+
+	@Test
+	@DisplayName("End-to-end multilingual job processing: Hiragana, Katakana, Devanagari, and Kanji")
+	void testMultilingualScriptsE2E() {
+		String md = """
+				# 多言語プロッター (Multilingual Plotter)
+				
+				## 日本語 (Japanese Kana & Kanji)
+				こんにちは世界！ペンプロッターのテストです。
+				
+				## देवनागरी (Devanagari Hindi & Sanskrit)
+				नमस्ते दुनिया! यह प्लॉटरक्राफ्ट का परीक्षण है।
+				""";
+
+		PlotterJobRequest request = PlotterJobRequest.builder()
+				.markdown(md)
+				.build();
+
+		PlotterJobResponse response = pipelineService.processJob(request);
+
+		assertThat(response.isSuccess()).isTrue();
+		assertThat(response.getMoves()).isNotEmpty();
+		assertThat(response.getGcode()).contains("G0");
+		assertThat(response.getGcode()).contains("G1");
+	}
 }

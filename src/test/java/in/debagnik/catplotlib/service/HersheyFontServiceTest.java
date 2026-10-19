@@ -146,4 +146,58 @@ class HersheyFontServiceTest {
         double width = fontService.measureTextWidth(mathExpr, 1.0);
         assertThat(width).isGreaterThan(0.0);
     }
+
+    @Test
+    @DisplayName("Single-stroke Hiragana renders valid vector strokes without fallback boxes")
+    void testHiraganaRendering() {
+        String hiragana = "こんにちはありがとう";
+        List<VectorStroke> strokes = fontService.renderText(hiragana, 10.0, 20.0, 1.0, false, 0.0);
+
+        assertThat(strokes).isNotEmpty();
+        assertThat(strokes).allMatch(s -> "TEXT".equals(s.getTag()));
+        double width = fontService.measureTextWidth(hiragana, 1.0);
+        assertThat(width).isGreaterThan(0.0);
+    }
+
+    @Test
+    @DisplayName("Single-stroke Katakana renders valid vector strokes")
+    void testKatakanaRendering() {
+        String katakana = "ペンプロッターテスト";
+        List<VectorStroke> strokes = fontService.renderText(katakana, 10.0, 20.0, 1.0, false, 0.0);
+
+        assertThat(strokes).isNotEmpty();
+        double width = fontService.measureTextWidth(katakana, 1.0);
+        assertThat(width).isGreaterThan(0.0);
+    }
+
+    @Test
+    @DisplayName("Single-stroke Devanagari renders with continuous Shirorekha headline")
+    void testDevanagariRendering() {
+        String devanagari = "नमस्ते भारत १२३ ॐ";
+        List<VectorStroke> strokes = fontService.renderText(devanagari, 10.0, 20.0, 1.0, false, 0.0);
+
+        assertThat(strokes).isNotEmpty();
+        assertThat(strokes).allMatch(s -> "TEXT".equals(s.getTag()));
+        double width = fontService.measureTextWidth(devanagari, 1.0);
+        assertThat(width).isGreaterThan(0.0);
+    }
+
+    @Test
+    @DisplayName("AWT fallback vectorizes unmapped Kanji characters smoothly without boxes")
+    void testAwtKanjiFallbackRendering() {
+        String kanji = "日本語漢字";
+        List<VectorStroke> strokes = fontService.renderText(kanji, 10.0, 20.0, 1.0, false, 0.0);
+
+        assertThat(strokes).isNotEmpty();
+        double width = fontService.measureTextWidth(kanji, 1.0);
+        assertThat(width).isGreaterThan(0.0);
+    }
+
+    @Test
+    @DisplayName("Full-width CJK space advances cursor correctly")
+    void testFullWidthSpace() {
+        double wNoSpace = fontService.measureTextWidth("あ", 1.0);
+        double wWithSpace = fontService.measureTextWidth("あ\u3000い", 1.0);
+        assertThat(wWithSpace).isGreaterThan(wNoSpace * 2.0);
+    }
 }

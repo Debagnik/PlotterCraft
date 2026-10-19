@@ -479,6 +479,26 @@ public class MarkdownParserService {
 
         for (String word : words) {
             if (word.isEmpty()) continue;
+
+            // If an individual token exceeds maxWidth (common in CJK non-spaced text or formulas)
+            if (fontService.measureTextWidth(word, scale) > maxWidth) {
+                if (!currentLine.isEmpty()) {
+                    lines.add(currentLine.toString());
+                    currentLine = new StringBuilder();
+                }
+                for (int i = 0; i < word.length(); i++) {
+                    char c = word.charAt(i);
+                    String testChar = currentLine.toString() + c;
+                    if (fontService.measureTextWidth(testChar, scale) > maxWidth && !currentLine.isEmpty()) {
+                        lines.add(currentLine.toString());
+                        currentLine = new StringBuilder().append(c);
+                    } else {
+                        currentLine.append(c);
+                    }
+                }
+                continue;
+            }
+
             String testLine = currentLine.isEmpty() ? word : currentLine + " " + word;
             double width = fontService.measureTextWidth(testLine, scale);
 
